@@ -57,7 +57,7 @@ async function initApp() {
     const loadTime = appLoadEnd - appLoadStart;
     console.log(`✅ App initialized in ${loadTime.toFixed(2)} ms`);
     
-    /*setTimeout(() => tryRecordPageEvent(ticketID), 1000);*/
+    setTimeout(() => tryRecordPageEvent(ticketID, loadTime), 1000);
     
   } catch (error) {
     console.error("❌ App initialization failed:", error);
@@ -67,7 +67,7 @@ async function initApp() {
 }
 
 
-function tryRecordPageEvent(ticketID, attempts = 0) {
+function tryRecordPageEvent(ticketID, loadTime, attempts = 0) {
   const isCwrReady = typeof window.cwr === 'function';
 
   const data = {

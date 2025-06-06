@@ -22,13 +22,13 @@ function generateinternalnotescontainer(ticketID, client, ticketchannel, convers
                 </div>
             </div>
         <span class="info-span" id="info-span">Please ensure that relevant ticket fields are updated before generating internal note.</span>
-        <span class="info-span-disable" id="info-span-disbale">This feature is currently not available for Voice Channel Group.</span>
+        <span class="info-span-disable" id="info-span-disbale">This feature is currently not available for this Channel Group.</span>
 
     <div>
         
     `;
 
-    if (assigneegroupid === 28949203098007) {
+    if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
         console.log("Voice Channel Ticket. Deactivating Button");
         const internalNoteButton = document.getElementById("cta-generate-internal-note");
         const infospan = document.getElementById("info-span");
@@ -165,7 +165,7 @@ async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, convers
         const loadtime = loadend - loadstart; 
         console.log(`Wrap up notes generated and posted in ${loadtime.toFixed(2)} ms`);
 
-        // setTimeout(() => tryRecordPageEvent(eventmodule, loadtime), 1000); 
+        setTimeout(() => tryRecordPageEvent(eventmodule, loadtime), 1000); 
 
         } catch (err) {
           console.error("Wrap up notes rendering error:", err);
@@ -179,7 +179,7 @@ async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, convers
         const rumsticketid = ticketID;
         console.log(`Fetch wrap up notes and render completed in ${loadtime.toFixed(2)} ms`);
 
-        // setTimeout(() => recordApiEvent(loadtime, rumsticketid, eventmodule, responseSizeBytes), 1000);
+        setTimeout(() => recordApiEvent(loadtime, rumsticketid, eventmodule, responseSizeBytes, requestpayloadBytesize), 1000);
 
     } catch (error) {
         console.error("Internal Notes Fetch and rendering error:", error);
@@ -215,25 +215,26 @@ function tryRecordPageEvent(eventmodule, loadtime) {
   }
 }
 
-function recordApiEvent(loadtime, rumshiftid, eventmodule, responseSizeBytes, attempts = 0) {
+function recordApiEvent(loadtime, rumsticketid, eventmodule, responseSizeBytes, requestpayloadBytesize, attempts = 0) {
   const isCwrReady = typeof window.cwr === 'function';
 
-  const shiftfetchrumdata = {
+  const notesfetchrumdata = {
   name: eventmodule,
   duration: loadtime, 
-  shiftId: rumshiftid, 
-  responseBytesize: responseSizeBytes
+  ticketId: rumsticketid, 
+  responseBytesize: responseSizeBytes, 
+  requestedBytesize: requestpayloadBytesize
   };
 
   if (isCwrReady) {
     window.cwr('recordEvent', {
       type: "api.get-internal-notes-resource",
-      data: shiftfetchrumdata
+      data: notesfetchrumdata
     });
-    console.log("✅ AWS RUM event recorded", shiftfetchrumdata);
+    console.log("✅ AWS RUM event recorded", notesfetchrumdata);
   } else if (attempts < 5) {
     console.warn(`⚠️ AWS RUM cwr not ready for ${eventmodule}, retrying in 1s...`);
-    setTimeout(() => recordApiEvent(loadtime, rumshiftid, eventmodule, responseSizeBytes, attempts + 1), 1000);
+    setTimeout(() => recordApiEvent(loadtime, rumsticketid, eventmodule, responseSizeBytes, requestpayloadBytesize, attempts + 1), 1000);
   } else {
     console.error("❌ Failed to record AWS RUM event: cwr not ready");
   }
