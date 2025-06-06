@@ -264,8 +264,55 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
 
         console.log("🔄 Rendering Internal Notes");
         // Start - Get custom field data for Internal Note fill (For any additional ticket fields requried)
-        let shiftId;
+        
+        const hexRegex = /^[a-fA-F0-9]{24}$/;
+        let shiftIdString; 
+        let atLeastOneIdIsValid = false; // Flag to indicate if at least one ID is valid
+        let shiftIdsArray;
+        let validShiftIds = []; // Array to store only the valid Shift IDs
+
+
         await client.get("ticket.customField:custom_field_6603666641559").then((data) => {
+        shiftIdString = data ? data["ticket.customField:custom_field_6603666641559"] : null;
+
+              if (!shiftIdString || shiftIdString.trim() === '') {
+                  console.warn("Shift ID field is empty.");
+                  allShiftIdsAreValid = false;
+              } else {
+                  console.log("Fetched Shift ID string:", shiftIdString);
+
+              //Regex Compiler
+              shiftIdsArray = shiftIdString.split(/[^a-fA-F0-9]+/).filter(id => id);
+
+              if (shiftIdsArray.length === 0) {
+                  console.warn("No potential Shift IDs found after splitting the string.");
+                  allShiftIdsAreValid = false;
+                  return; // Exit if no IDs are found
+              }
+                  
+              console.log("Found potential IDs to check:", shiftIdsArray);
+
+                // 2. Use Array.every() to ensure ALL extracted parts are valid.
+                validShiftIds = shiftIdsArray.filter(id => {
+                  const isValid = hexRegex.test(id);
+                    if (!isValid) {
+                        console.warn(`❌ Invalid Shift ID found: "${id}"`);
+                    }
+                    return isValid; 
+                });
+
+              atLeastOneIdIsValid = validShiftIds.length > 0;
+
+              if (atLeastOneIdIsValid) {
+                  console.log("✅ At least one valid Shift ID was found.");
+                  console.log("Array of valid Shift IDs:", validShiftIds);
+              } else {
+                  console.error("No valid Shift IDs were found in the list.");
+              }
+            }
+        });
+
+        /*await client.get("ticket.customField:custom_field_6603666641559").then((data) => {
         shiftId = data["ticket.customField:custom_field_6603666641559"];
     
         if (!shiftId) {
@@ -273,10 +320,12 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
         } else {
         console.log("Shift ID:", shiftId);
         }
-        })
+        })*/
         // end - get custom field block
 
         // Placoholder command to add response data and fill internal notes to editor and set editor space to internal notes
+        const shiftid = String(validShiftIds);
+        console.log("Final Shift id string:", shiftid);
         await client.set('comment.type', 'internalNote');
 
         await client.invoke('ticket.editor.insert', `
@@ -285,7 +334,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
             <strong>Name:</strong> ${user_fullname} | <strong>External ID:</strong> ${agent_id} <br>  
             <strong>Email:</strong> ${user_email}
             <hr>
-            <strong>Shift ID Logged:</strong> ${(shiftId && shiftId.toString().trim()) ? "Yes" : "No"} | <strong>Shift ID(s):</strong> ${(shiftId && shiftId.toString().trim()) ? shiftId : "N/A"}
+            <strong>Shift ID Logged:</strong> ${(atLeastOneIdIsValid) ? "Yes" : "No"} | <strong>Shift ID(s):</strong> ${(atLeastOneIdIsValid) ? shiftid : "N/A"}
             <hr>
             ${internalnotesfill}.`);
         // Ticket editor insert end
