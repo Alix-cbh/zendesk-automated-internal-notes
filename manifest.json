@@ -1,0 +1,20 @@
+{
+  "name": "Automated Zendesk Internal Notes",
+  "author": {
+    "name": "Alix Beecher",
+    "email": "alex.beecher@clipboardhealth.com"
+  },
+  "defaultLocale": "en",
+  "private": true,
+  "location": {
+    "support": {
+      "ticket_editor": {
+        "url": "assets/iframe.html",
+        "flexible": true,
+        "auto_load": true
+      }
+    }
+  },
+  "version": "1.0", 
+  "frameworkVersion": "2.0"
+}

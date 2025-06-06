@@ -1,0 +1,22 @@
+ HCP HCF Messages
+ <! --
+    <details class="hcp-hcf-messages">
+        <summary>Worker Chat</summary>
+
+        <!-- Chat logs container -->
+        <div id="hcp-hcf-messages-content" class="hcp-hcf-messages-content inner-content">
+            <!-- Logs will be populated here -->
+        </div>
+
+        <!-- Chat Modal -->
+        <div id="chatModal" class="chat-modal">
+            <div id = "chat-modal-content" class="chat-modal-content">
+                <span class="chat-close-btn">&times;</span>
+                <h2>Chat History</h2>
+                <div id="chatHistoryContent">
+                    <!-- Chat messages will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </details>
+-- >

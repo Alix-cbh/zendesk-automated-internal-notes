@@ -1,0 +1,175 @@
+body { 
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.8rem;
+    text-align: center;
+    padding: 0;
+}
+.generate-internal-notes-contianer {
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    width: 100%;
+    
+}
+
+#closeButton {
+    cursor: pointer; 
+    font-weight: bold; 
+    color: #39434b; 
+    font-weight: 500;
+    font-size: 1.2rem;
+    position: absolute;
+    right: 1px;
+}
+.divider{
+  color: #dcdcdc;
+}
+
+#closeButton:hover {
+  opacity: 75%;
+}
+
+.lightning-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23FFD700' viewBox='0 0 24 24'><path d='M13 2L3 14h7l-1 8 10-12h-7l1-8z'/></svg>");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+.externalcontainer {
+    width: 100%;
+    height: 200px;
+    padding: 0%;
+}
+
+.info-span {
+    width: 70%;
+    font-size: 0.75rem;
+    font-weight: 450;
+    margin: 0% auto 5% auto;
+    text-align: center;
+}
+
+.info-span-disable {
+  width: 70%;
+  font-size: 0.75rem;
+  font-weight: 450;
+  display: none;
+  margin: 0% auto 5% auto;
+  text-align: center;
+
+}
+
+.generate-internal-notes-wrapper {
+    height: 100%;
+    padding: 0%;
+}
+
+.button-top-header {
+    margin: 2% 0%;
+    font-weight: 500;
+    padding: 2% 0%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 35px;
+    position: relative;
+    
+}
+
+#spinner {
+  display: none;  
+  width: 40px;
+  height: 40px;
+  border: 5px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid #FFD700;
+  margin: 20px auto;
+  animation: spin 2s linear infinite; 
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+#error-alert {
+  position: relative; 
+  border: 1px solid red; 
+  background-color: pink; 
+  color: #39434b;
+  font-weight: 500; 
+  padding: 2% 2% 2% 2% ; 
+  border-radius: 5px; 
+  margin: 2% auto 5% auto;
+  font-size: 0.6rem;
+}
+
+#success-alert {
+  position: relative; 
+  border: 1px solid rgb(218, 255, 213); 
+  background-color: rgb(69, 255, 66); 
+  font-weight: 500; 
+  color: #39434b;
+  padding: 2% 2% 2% 2% ; 
+  border-radius: 5px; 
+  margin: 0% auto 5% auto;
+  font-size: 0.6rem;
+}
+
+#error-main-alert {
+  position: relative; 
+  border: 1px solid red; 
+  background-color: pink; 
+  color: #39434b;
+  font-weight: 500; 
+  padding: 2% 2% 2% 2% ; 
+  border-radius: 5px; 
+  margin: 0% auto 5% auto;
+  font-size: 0.6rem;
+}
+
+
+
+#cta-generate-internal-note:disabled {
+  background-color: #e9eaeb; /* A light grey background */
+  color: #a8b0b8; /* A muted text color */
+  border: 1px solid #d8dde1;
+  cursor: not-allowed;
+  box-shadow: none; /* Remove shadow when disabled */
+  transform: none; /* Remove any hover transforms when disabled */
+  opacity: 0.6; /* You can combine opacity here too */
+}
+
+.generate-internal-notes-button-cta {
+background-color: #39434b; 
+color: #ffff;
+cursor: pointer;
+box-shadow: 0 4px 12px rgba(0, 21, 44, 0.134); /* softened hover shadow with #007bff */
+border: none;
+border-radius: 5px;
+width: fit-content;
+padding: 4%;
+display: inline-flex;
+gap: 5px;
+font-weight: normal;
+justify-content: center;
+align-items: center;
+font-size: 0.8rem;
+transition: 0.2s ease-in-out;
+margin: 10% 0% 6% 0%;
+}
+
+.generate-internal-notes-button-cta:hover {
+  background-color: #5C6970;
+  color: #ffff;
+  box-shadow: 0 4px 12px rgba(0, 21, 44, 0.23); /* softened hover shadow with #007bff */
+  transform: translateY(-1px) scale(1.05);
+}
+
+.button-text {
+  font-weight: 300;
+}

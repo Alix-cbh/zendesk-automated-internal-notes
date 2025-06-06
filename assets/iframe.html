@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!--   See Using Zendesk Garden:
+    https://developer.zendesk.com/apps/docs/developer-guide/setup#using-zendesk-garden
+    https://garden.zendesk.com/css-components/bedrock/
+    https://garden.zendesk.com/css-components/utilities/typography/
+   -->
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+      (function(n,i,v,r,s,c,x,z){x=window.AwsRumClient={q:[],n:n,i:i,v:v,r:r,c:c};window[n]=function(c,p){x.q.push({c:c,p:p});};z=document.createElement('script');z.async=true;z.src=s;document.head.insertBefore(z,document.head.getElementsByTagName('script')[0]);})(
+        'cwr',
+        '59ac4cb9-b64b-4ebd-95f3-cbf363110f68',
+        '1.0.0',
+        'us-east-1',
+        'https://client.rum.us-east-1.amazonaws.com/1.19.0/cwr.js',
+        {
+          sessionSampleRate: 1 ,
+          identityPoolId: "us-east-1:420ad45a-25fc-47a8-bdc2-a6beac0994da" ,
+          endpoint: "https://dataplane.rum.us-east-1.amazonaws.com" ,
+          telemetries: ["performance","errors","http"] ,
+          allowCookies: true ,
+          enableXRay: true ,
+          signing: true 
+        }
+      );
+    </script>
+
+</head>
+<body>
+<!--<script>
+  cwr('recordPageView', { pageId: '/shift_details', pageTags: ['en'] });
+  console.log("📊 RUM page view recorded");
+</script>-->
+<div id="ctaexternalcontiner" class="externalcontainer"></div>
+  
+
+  <script src="https://js.sentry-cdn.com/b77d1feeb390a1abce2d318daa24c8f6.min.js" crossorigin="anonymous"></script>
+
+    <script>
+        Sentry.onLoad(function() {
+          Sentry.init({
+            // dsn: "https://91191fdb96770f964d4836b3e695c9d8@o4509357846102016.ingest.us.sentry.io/4509357861437440", 
+            // environment: "production", // or 'development', 'staging', etc.
+            integrations: [
+              Sentry.replayIntegration({
+                maskAllText: false  // show all input text
+              })
+            ]
+        });
+      });
+  </script>
+
+  <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
+  <script src="scripts.js" type="module"></script>
+  <script src="config.js" type="module"></script>
+  <script src="utils.js" type="module"></script>
+
+
+  
+
+  <script>
+    // Initialise Apps framework client. See also:
+    // https://developer.zendesk.com/apps/docs/developer-guide/getting_started
+    // var client = ZAFClient.init();
+    // client.invoke('resize', { width: '100%', height: '200px' });
+  </script>
+
+</body>
+</html>
