@@ -127,7 +127,7 @@ async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, convers
 
           status = response?.status || 'No response';
           statusText = response?.statusText || 'Unknown error';
-          errorMsg = `Error fetching shift data: ${status} ${statusText}`;
+          errorMsg = `Error fetching wrap-up notes: ${status} ${statusText}`;
 
         if (!response || !response.ok) { 
           Sentry.captureMessage(errorMsg);
