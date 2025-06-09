@@ -48,10 +48,7 @@ async function initApp() {
     const ticketchannel = await client.get('ticket.via'); 
     console.log("Ticket Channel:", ticketchannel);
 
-    const conversation = await client.get('ticket.conversation');
-    console.log("Ticket Convo:", conversation);
-
-    generateinternalnotescontainer(ticketID, client, ticketchannel, conversation, agentId, useremail, userfullname, assigneegroupid);
+    generateinternalnotescontainer(ticketID, client, ticketchannel, agentId, useremail, userfullname, assigneegroupid);
 
     const appLoadEnd = performance.now();
     const loadTime = appLoadEnd - appLoadStart;

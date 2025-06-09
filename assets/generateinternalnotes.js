@@ -2,7 +2,7 @@
 import { fetchWithTimeoutAndRetry } from "./utils.js";
 import { apiKey, apiUrl } from "./config.js";
 
-function generateinternalnotescontainer(ticketID, client, ticketchannel, conversation, agentId, useremail, userfullname, assigneegroupid){
+function generateinternalnotescontainer(ticketID, client, ticketchannel, agentId, useremail, userfullname, assigneegroupid){
     const aiinternalnotebuttoncontainer = document.getElementById("ctaexternalcontiner"); 
     console.log(assigneegroupid);
  
@@ -65,11 +65,11 @@ function generateinternalnotescontainer(ticketID, client, ticketchannel, convers
 
     const button = document.getElementById("cta-generate-internal-note");
     // Remove all old click handlers and add only one
-    button.onclick = () => fetchinternalwrapupnotes(ticketID, client, ticketchannel, conversation, agentId, useremail, userfullname);   
+    button.onclick = () => fetchinternalwrapupnotes(ticketID, client, ticketchannel, agentId, useremail, userfullname);   
 
 }
 
-async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, conversation, agentId, useremail, userfullname){
+async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, agentId, useremail, userfullname){
     const loadstart = performance.now(); 
     const eventmodule = "fetch-internal-notes-main";
     const aiinternalnotebutton = document.getElementById("cta-generate-internal-note"); 
@@ -80,6 +80,9 @@ async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, convers
 
     let requestticketinfo; 
     let requestpayloadBytesize; 
+
+    const conversation = await client.get('ticket.conversation');
+    console.log("Ticket Convo:", conversation);
 
     //Extract conversation messages and report byte size
     if (conversation) {
