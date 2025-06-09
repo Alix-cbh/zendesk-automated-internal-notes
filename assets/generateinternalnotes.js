@@ -117,8 +117,8 @@ async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, convers
             console.error("Fetch with retry failed:", error);
             Sentry.captureException(error);
             cwr('recordError', error); 
-
           } 
+          
           console.log(response);
 
           let status; 
@@ -135,6 +135,10 @@ async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, convers
           throw new Error(`Error fetching wrap up notes data: ${errorMsg}`);
         }
 
+        if (response?.status === 204) { 
+          throw new Error("No Conversation Data Scenario/No Content Returned.");
+        }
+
         // Parse the JSON response
         const responseClone = response?.clone(); 
         const blob = await responseClone?.blob();
@@ -145,7 +149,7 @@ async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, convers
         // Check for empty body
         const text = await response?.text();
         if (!text) { 
-            throw new Error("Empty response body");     
+            throw new Error("Not 204 Returned; Empty response body fetched");     
         }
 
         // Parse only if there's content
