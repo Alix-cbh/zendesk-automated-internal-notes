@@ -277,7 +277,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
 
               if (!shiftIdString || shiftIdString.trim() === '') {
                   console.warn("Shift ID field is empty.");
-                  allShiftIdsAreValid = false;
+                  atLeastOneIdIsValid = false;
               } else {
                   console.log("Fetched Shift ID string:", shiftIdString);
 
@@ -286,7 +286,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
 
               if (shiftIdsArray.length === 0) {
                   console.warn("No potential Shift IDs found after splitting the string.");
-                  allShiftIdsAreValid = false;
+                  atLeastOneIdIsValid = false;
                   return; // Exit if no IDs are found
               }
                   
