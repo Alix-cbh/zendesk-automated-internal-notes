@@ -18,7 +18,6 @@ async function initApp() {
     console.log("Context fetched:", context);
 
     const ticketID = context?.ticketId;
-    if (!ticketID) throw new Error("Ticket ID not found in context.");
 
     const assingee = await client.get("ticket.assignee");
     console.log("Assigne fetched", assingee);
