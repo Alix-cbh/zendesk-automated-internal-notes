@@ -1,5 +1,5 @@
 // Timeout and Rety Function Script
-async function fetchWithTimeoutAndRetry(url, options = {}, retries = 2, timeout = 20000) {
+async function fetchWithTimeoutAndRetry(url, options = {}, retries = 3, timeout = 40000) {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const controller = new AbortController();
