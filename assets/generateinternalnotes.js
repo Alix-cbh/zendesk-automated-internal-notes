@@ -2,7 +2,9 @@
 import { fetchWithTimeoutAndRetry } from "./utils.js";
 import { apiKey, apiUrl } from "./config.js";
 
-function generateinternalnotescontainer(ticketID, client, ticketchannel, agentId, useremail, userfullname, assigneegroupid){
+const PENDING_ACTION_KEY = 'zendeskApp_pendingAction';
+
+async function generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid){
     const aiinternalnotebuttoncontainer = document.getElementById("ctaexternalcontiner"); 
     console.log(assigneegroupid);
  
@@ -65,11 +67,11 @@ function generateinternalnotescontainer(ticketID, client, ticketchannel, agentId
 
     const button = document.getElementById("cta-generate-internal-note");
     // Remove all old click handlers and add only one
-    button.onclick = () => fetchinternalwrapupnotes(ticketID, client, ticketchannel, agentId, useremail, userfullname);   
+    button.onclick = () => fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid);   
 
 }
 
-async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, agentId, useremail, userfullname){
+async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid){
     const loadstart = performance.now(); 
     const eventmodule = "fetch-internal-notes-main";
     const aiinternalnotebutton = document.getElementById("cta-generate-internal-note"); 
@@ -86,15 +88,15 @@ async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, agentId
 
     //Extract conversation messages and report byte size
     if (conversation) {
-    console.log("Pre Request extracted info:", conversation);
+      console.log("Pre Request extracted info:", conversation);
 
-    requestticketinfo = conversation["ticket.conversation"];
-    console.log("Request extracted info:", requestticketinfo);
+      requestticketinfo = conversation["ticket.conversation"];
+      console.log("Request extracted info:", requestticketinfo);
 
-    const jsonString = JSON.stringify(requestticketinfo);
-    const encoder = new TextEncoder(); 
-    const byteArray = encoder.encode(jsonString);
-    requestpayloadBytesize = byteArray.length; 
+      const jsonString = JSON.stringify(requestticketinfo);
+      const encoder = new TextEncoder(); 
+      const byteArray = encoder.encode(jsonString);
+      requestpayloadBytesize = byteArray.length; 
 
     console.log(`📦 Request payload (JSON stringified) approximate byte size: ${requestpayloadBytesize} bytes`);       
     } else {
@@ -161,6 +163,16 @@ async function fetchinternalwrapupnotes(ticketID, client, ticketchannel, agentId
         if (!wrapupData) {
             throw new Error(`No response data found: ${wrapupData}`);
         }
+
+        const actionData = {
+            action: 'PASTE_INTERNAL_NOTE',
+            data: { ticketID, wrapupData, agentId, useremail, userfullname, assigneegroupid }
+        };
+
+        sessionStorage.setItem(PENDING_ACTION_KEY, JSON.stringify(actionData));
+        console.log("Data saved to sessionStorage. Switching editor view...");
+
+        await client.set('comment.type', 'internalNote');
 
         try {
         const loadstart = performance.now();
@@ -257,7 +269,6 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
   const internalnotesfill = wrapupData?.notes;
   const currentDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
 
-
   if (!wrapupData) {
         const alertmessage = `
             <div id="error-alert">
@@ -270,6 +281,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
     try {
 
         console.log("🔄 Rendering Internal Notes");
+
         // Start - Get custom field data for Internal Note fill (For any additional ticket fields requried)
         
         /*const hexRegex = /^[a-fA-F0-9]{24}$/;
@@ -323,35 +335,56 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
         // Placoholder command to add response data and fill internal notes to editor and set editor space to internal notes
         // const shiftid = String(validShiftIds);
         // console.log("Final Shift id string:", shiftid);
-        await client.set('comment.type', 'internalNote');
 
-        await client.invoke('ticket.editor.insert', `
-            <strong>Date:</strong> ${currentDate}<br>
-            <strong>ZD Ticket:</strong> ${ticket_id}<br>   
-            <strong>Name:</strong> ${user_fullname} | <strong>External ID:</strong> ${agent_id} <br>  
-            <strong>Email:</strong> ${user_email}
-            <hr>
-            ${internalnotesfill}`);
-        // Ticket editor insert end
-        
-        //Success alert message
-        const alertmessage = `
-            <div id="success-alert">
-                <span onclick="document.getElementById('success-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: white; font-weight: 500;">&times;</span>
-                    Successfully generated Internal Note!
-            </div>
-        `;    
-        innercontainer.insertAdjacentHTML('beforeEnd', alertmessage); 
+        /*await client.set('comment.type', 'internalNote').then(() => {
+          // This block runs only after client.set has successfully completed
+          console.log("Editor switched to internalNote. Now inserting text.");
+          
+          // Return the next promise in the chain
+          client.invoke('ticket.editor.insert', `
+              <strong>Date:</strong> ${currentDate}<br>
+              <strong>ZD Ticket:</strong> ${ticket_id}<br>  
+              <strong>Name:</strong> ${user_fullname} | <strong>External ID:</strong> ${agent_id} <br>  
+              <strong>Email:</strong> ${user_email}
+              <hr>
+              ${internalnotesfill}`);
+        }).then(() => {
+          // This block runs only after client.invoke has successfully completed
+          console.log("Text successfully inserted.");
+        }).catch((error) => {
+          // This .catch() block will handle any errors from either client.set or client.invoke
+          console.error("An error occurred during the set or insert operation:", error);
+        });*/
 
-        const loadend = performance.now();
-        const loadtime = loadend - loadstart;      
-        console.log(`Internal Notes rendered to editor in ${loadtime.toFixed(2)} ms`);
+      //await client.set('comment.type', 'internalNote');
+      await client.invoke('ticket.editor.insert', `
+          <strong>Date:</strong> ${currentDate}<br>
+          <strong>ZD Ticket:</strong> ${ticket_id || ticketID}<br>   
+          <strong>Name:</strong> ${user_fullname || userfullname} | <strong>External ID:</strong> ${agent_id || agentId} <br>  
+          <strong>Email:</strong> ${user_email || useremail}
+          <hr>
+          ${internalnotesfill}`);
+      // Ticket editor insert end
+      
+      //Success alert message
+      const alertmessage = `
+          <div id="success-alert">
+              <span onclick="document.getElementById('success-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: white; font-weight: 500;">&times;</span>
+                  Successfully generated Internal Note!
+          </div>
+      `;    
+      innercontainer.insertAdjacentHTML('beforeEnd', alertmessage); 
 
+      const loadend = performance.now();
+      const loadtime = loadend - loadstart;      
+      console.log(`Internal Notes rendered to editor in ${loadtime.toFixed(2)} ms`);
+      sessionStorage.removeItem(PENDING_ACTION_KEY);
         
     } catch (error) {
         console.error("Internal Notes render to editor error:", error);
         Sentry.captureException(error);
         cwr('recordError', error); 
+        sessionStorage.removeItem(PENDING_ACTION_KEY);
         const alertmessage = `
             <div id="error-main-alert">
                 <span onclick="document.getElementById('error-main-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: white; font-weight: 500;">&times;</span>
@@ -366,4 +399,4 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
 }
 
 
-export {generateinternalnotescontainer}; 
+export {generateinternalnotescontainer, renderwrapupnotes}; 

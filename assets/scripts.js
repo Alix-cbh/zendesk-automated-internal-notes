@@ -1,23 +1,57 @@
-import { generateinternalnotescontainer } from './generateinternalnotes.js'
+import { generateinternalnotescontainer, renderwrapupnotes } from './generateinternalnotes.js'
 
-document.addEventListener("DOMContentLoaded", () => {
+/*document.addEventListener("DOMContentLoaded", () => {
   initApp();
+});*/
+
+const PENDING_ACTION_KEY = 'zendeskApp_pendingAction';
+
+document.addEventListener("DOMContentLoaded", async () => {
+  const pendingActionJSON = sessionStorage.getItem(PENDING_ACTION_KEY);
+  const client = ZAFClient.init();
+  await client.invoke("resize", { width: "310px", height: "235px" });
+
+        if (pendingActionJSON) {
+            console.log("Pending action found after reload. Resuming...");
+            sessionStorage.removeItem(PENDING_ACTION_KEY);
+
+            const pendingAction = JSON.parse(pendingActionJSON);
+            
+            if (pendingAction.action === 'PASTE_INTERNAL_NOTE') {
+                
+                const ticketID = pendingAction.data.ticketID; 
+                const agentId = pendingAction.data.agentId; 
+                const useremail = pendingAction.data.useremail; 
+                const userfullname = pendingAction.data.userfullname;
+                const assigneegroupid = pendingAction.data.assigneegroupid;
+                const wrapupData = pendingAction.data.wrapupData;
+
+                await generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid);
+                await renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname);
+            }
+        } else {
+            console.log("No pending action. Performing initial app setup.");
+            await initApp(client);
+        }
+  
 });
 
-async function initApp() {
+async function initApp(client) {
   const appLoadStart = performance.now();
 
   try {
     console.log("🔄 Initializing Internal Notes App");
-    
-    const client = ZAFClient.init();
-    await client.invoke("resize", { width: "310px", height: "235px" });
-
 
     const context = await client.context();
     console.log("Context fetched:", context);
 
     const ticketID = context?.ticketId;
+
+    const editorchannel = await client.get('ticket.editor.targetChannel.name')
+    console.log("Editor Channel fetched:", editorchannel);
+
+    const editorchannelone = await client.get('comment.type')
+    console.log("Editor One Channel fetched:", editorchannelone);
 
     const assingee = await client.get("ticket.assignee");
     console.log("Assigne fetched", assingee);
@@ -47,7 +81,7 @@ async function initApp() {
     const ticketchannel = await client.get('ticket.via'); 
     console.log("Ticket Channel:", ticketchannel);
 
-    generateinternalnotescontainer(ticketID, client, ticketchannel, agentId, useremail, userfullname, assigneegroupid);
+    generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid);
 
     const appLoadEnd = performance.now();
     const loadTime = appLoadEnd - appLoadStart;
