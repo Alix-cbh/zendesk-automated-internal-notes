@@ -272,7 +272,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
         console.log("🔄 Rendering Internal Notes");
         // Start - Get custom field data for Internal Note fill (For any additional ticket fields requried)
         
-        const hexRegex = /^[a-fA-F0-9]{24}$/;
+        /*const hexRegex = /^[a-fA-F0-9]{24}$/;
         let shiftIdString; 
         let atLeastOneIdIsValid = false; // Flag to indicate if at least one ID is valid
         let shiftIdsArray;
@@ -317,22 +317,12 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
                   console.error("No valid Shift IDs were found in the list.");
               }
             }
-        });
+        });*/
 
-        /*await client.get("ticket.customField:custom_field_6603666641559").then((data) => {
-        shiftId = data["ticket.customField:custom_field_6603666641559"];
-    
-        if (!shiftId) {
-        console.warn("Shift ID field is empty.");
-        } else {
-        console.log("Shift ID:", shiftId);
-        }
-        })*/
-        // end - get custom field block
 
         // Placoholder command to add response data and fill internal notes to editor and set editor space to internal notes
-        const shiftid = String(validShiftIds);
-        console.log("Final Shift id string:", shiftid);
+        // const shiftid = String(validShiftIds);
+        // console.log("Final Shift id string:", shiftid);
         await client.set('comment.type', 'internalNote');
 
         await client.invoke('ticket.editor.insert', `
@@ -341,9 +331,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
             <strong>Name:</strong> ${user_fullname} | <strong>External ID:</strong> ${agent_id} <br>  
             <strong>Email:</strong> ${user_email}
             <hr>
-            <strong>Shift ID Logged:</strong> ${(atLeastOneIdIsValid) ? "Yes" : "No"} | <strong>Shift ID(s):</strong> ${(atLeastOneIdIsValid) ? shiftid : "N/A"}
-            <hr>
-            ${internalnotesfill}.`);
+            ${internalnotesfill}`);
         // Ticket editor insert end
         
         //Success alert message
