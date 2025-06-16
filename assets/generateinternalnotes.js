@@ -336,27 +336,6 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
         // const shiftid = String(validShiftIds);
         // console.log("Final Shift id string:", shiftid);
 
-        /*await client.set('comment.type', 'internalNote').then(() => {
-          // This block runs only after client.set has successfully completed
-          console.log("Editor switched to internalNote. Now inserting text.");
-          
-          // Return the next promise in the chain
-          client.invoke('ticket.editor.insert', `
-              <strong>Date:</strong> ${currentDate}<br>
-              <strong>ZD Ticket:</strong> ${ticket_id}<br>  
-              <strong>Name:</strong> ${user_fullname} | <strong>External ID:</strong> ${agent_id} <br>  
-              <strong>Email:</strong> ${user_email}
-              <hr>
-              ${internalnotesfill}`);
-        }).then(() => {
-          // This block runs only after client.invoke has successfully completed
-          console.log("Text successfully inserted.");
-        }).catch((error) => {
-          // This .catch() block will handle any errors from either client.set or client.invoke
-          console.error("An error occurred during the set or insert operation:", error);
-        });*/
-
-      //await client.set('comment.type', 'internalNote');
       await client.invoke('ticket.editor.insert', `
           <strong>Date:</strong> ${currentDate}<br>
           <strong>ZD Ticket:</strong> ${ticket_id || ticketID}<br>   

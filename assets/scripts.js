@@ -7,33 +7,38 @@ import { generateinternalnotescontainer, renderwrapupnotes } from './generateint
 const PENDING_ACTION_KEY = 'zendeskApp_pendingAction';
 
 document.addEventListener("DOMContentLoaded", async () => {
-  const pendingActionJSON = sessionStorage.getItem(PENDING_ACTION_KEY);
-  const client = ZAFClient.init();
-  await client.invoke("resize", { width: "310px", height: "235px" });
+  try {
+    const pendingActionJSON = sessionStorage.getItem(PENDING_ACTION_KEY);
+    const client = ZAFClient.init();
+    await client.invoke("resize", { width: "310px", height: "235px" });
 
-        if (pendingActionJSON) {
-            console.log("Pending action found after reload. Resuming...");
-            sessionStorage.removeItem(PENDING_ACTION_KEY);
+          if (pendingActionJSON) {
+              console.log("Pending action found after reload. Resuming...");
+              sessionStorage.removeItem(PENDING_ACTION_KEY);
 
-            const pendingAction = JSON.parse(pendingActionJSON);
-            
-            if (pendingAction.action === 'PASTE_INTERNAL_NOTE') {
-                
-                const ticketID = pendingAction.data.ticketID; 
-                const agentId = pendingAction.data.agentId; 
-                const useremail = pendingAction.data.useremail; 
-                const userfullname = pendingAction.data.userfullname;
-                const assigneegroupid = pendingAction.data.assigneegroupid;
-                const wrapupData = pendingAction.data.wrapupData;
+              const pendingAction = JSON.parse(pendingActionJSON);
+              
+              if (pendingAction.action === 'PASTE_INTERNAL_NOTE') {
+                  
+                  const ticketID = pendingAction.data.ticketID; 
+                  const agentId = pendingAction.data.agentId; 
+                  const useremail = pendingAction.data.useremail; 
+                  const userfullname = pendingAction.data.userfullname;
+                  const assigneegroupid = pendingAction.data.assigneegroupid;
+                  const wrapupData = pendingAction.data.wrapupData;
 
-                await generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid);
-                await renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname);
-            }
-        } else {
-            console.log("No pending action. Performing initial app setup.");
-            await initApp(client);
-        }
-  
+                  await generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid);
+                  await renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname);
+              }
+          } else {
+              console.log("No pending action. Performing initial app setup.");
+              await initApp(client);
+          }
+  } catch (error) {
+    console.error("❌ App initialization failed:", error);
+    cwr('recordError', error); 
+    Sentry.captureException(error);
+  }  
 });
 
 async function initApp(client) {
