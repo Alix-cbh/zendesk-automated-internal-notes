@@ -11,6 +11,7 @@ async function fetchWithTimeoutAndRetry(url, options = {}, retries = 3, timeout 
     } catch (err) {
       if (attempt === retries - 1) throw err;
       Sentry.captureException(err);
+      cwr('recordError', error);
       await new Promise(res => setTimeout(res, 1000 * Math.pow(2, attempt))); // exponential backoff
     }
   }
