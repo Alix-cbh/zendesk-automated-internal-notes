@@ -93,9 +93,6 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
     let requestticketinfo; 
     let requestpayloadBytesize; 
 
-    const editorchannel = await client.get('ticket.editor.targetChannel.name')
-    console.log("Editor Channel fetched:", editorchannel);
-
     let contactid;
 
     await client.get("ticket.customField:custom_field_24673769964823").then((data) => {
@@ -136,6 +133,7 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
         let wrapupData;
         let responseSizeBytes;
 
+
         try {
             wrapupData = await fetchWithTimeoutAndRetry(client, apiUrl, {
                 method: 'POST',
@@ -152,6 +150,8 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
                 responseSizeBytes = new Blob([responseText]).size;
                 console.log(`📦 Response payload size: ${responseSizeBytes} bytes`);
             }
+
+            await client.set('comment.type', 'internalNote');
         } catch (error) {
           const status = error.status || 'No response';
           const statusText = error.statusText || 'Unknown error';
@@ -175,15 +175,7 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
         sessionStorage.setItem(PENDING_ACTION_KEY, JSON.stringify(actionData));
         console.log("Data saved to sessionStorage. Switching editor view...");
 
-        try {
-          console.log("Switching comment display")
-          await client.set('comment.type', 'internalNote');
-
-        } catch (error) {
-          Sentry.captureException(error);
-          cwr('recordError', error);
-        }
-        setTimeout(() => {
+        
           try {
             const loadstart = performance.now();
             const eventmodule = "wrap-up-notes-initialization";
@@ -202,7 +194,6 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
             cwr('recordError', err);
             throw new Error("Issue with Internal Notes rendering");
           }
-        }, 500);
         
 
         const loadend = performance.now();
