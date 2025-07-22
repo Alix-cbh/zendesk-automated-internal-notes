@@ -27,6 +27,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                   const assigneegroupid = pendingAction.data.assigneegroupid;
                   const wrapupData = pendingAction.data.wrapupData;
 
+                  await client.set('comment.type', 'internalNote');
+
                   await generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid);
                   await renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname);
               }
@@ -38,7 +40,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("❌ App initialization failed:", error);
     cwr('recordError', error); 
     Sentry.captureException(error);
-  }  
+  }
+
 });
 
 async function initApp(client) {

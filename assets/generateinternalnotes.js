@@ -30,7 +30,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
         
     `;
 
-    if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
+    /*if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
         console.log("Voice Channel Ticket. Deactivating Button");
         const internalNoteButton = document.getElementById("cta-generate-internal-note");
         const infospan = document.getElementById("info-span");
@@ -44,7 +44,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
         }
     } else {
       console.log("Non-Voice Ticket, procedding.")
-    }
+    }*/
 
 
     if (closeButton) {
@@ -71,6 +71,16 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
 
 }
 
+/**
+ * Makes a secure API request using ZAF's client.request with retry logic.
+ * @param {object} client - The ZAF client object.
+ * @param {number} ticketID - The requesting ticket id.
+ * @param {string} agentId - The users external ID.
+ * @param {string} useremail - The email of the ticket requester.
+ * @param {string} userfullname - The full name of the ticket requester.
+ * @param {number} assigneegroupid - The assigned group id.
+ */
+
 async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid){
     const loadstart = performance.now(); 
     const eventmodule = "fetch-internal-notes-main";
@@ -82,6 +92,23 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
 
     let requestticketinfo; 
     let requestpayloadBytesize; 
+
+    const editorchannel = await client.get('ticket.editor.targetChannel.name')
+    console.log("Editor Channel fetched:", editorchannel);
+
+    let contactid;
+
+    await client.get("ticket.customField:custom_field_24673769964823").then((data) => {
+    contactid = data["ticket.customField:custom_field_24673769964823"];
+  
+    if ((assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) && !contactid) {
+      console.warn("⚠️ No Contact ID found, field is empty.");
+      renderwrapupnotes(null, null, null, null, null, null, flag = "nocontactid")
+      throw new Error ("No contact id found for contact. Unable to compile");
+    } else {
+      console.log("✅ Contact ID:", contactid);
+    }
+    })
 
     const conversation = await client.get('ticket.conversation');
     console.log("Ticket Convo:", conversation);
@@ -106,60 +133,36 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
 
     // fetch start 
     try {
-        
-        let response;
+        let wrapupData;
+        let responseSizeBytes;
 
         try {
-            response = await fetchWithTimeoutAndRetry(apiUrl, {
+            wrapupData = await fetchWithTimeoutAndRetry(client, apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'x-api-key': apiKey
                 },  
-                body: JSON.stringify({ messages : requestticketinfo, ticket_id : ticketID })
+                body: JSON.stringify({ messages : requestticketinfo, ticket_id : ticketID, contact_id: contactid })
             });
-          } catch (error) {
-            console.error("Fetch with retry failed:", error);
-            Sentry.captureException(error);
-            cwr('recordError', error); 
-          } 
-          
-          console.log(response);
 
-          let status; 
-          let statusText;
-          let errorMsg; 
-
-          status = response?.status || 'No response';
-          statusText = response?.statusText || 'Unknown error';
-          errorMsg = `Error fetching wrap-up notes: ${status} ${statusText}`;
-
-        if (!response || !response.ok) { 
+            // Calculate response size from the returned data
+            if (wrapupData) {
+                const responseText = JSON.stringify(wrapupData);
+                responseSizeBytes = new Blob([responseText]).size;
+                console.log(`📦 Response payload size: ${responseSizeBytes} bytes`);
+            }
+        } catch (error) {
+          const status = error.status || 'No response';
+          const statusText = error.statusText || 'Unknown error';
+          const errorMsg = `Error fetching shift data: ${status} ${statusText}`;
+          console.error("Fetch with retry failed:", errorMsg);
           Sentry.captureMessage(errorMsg);
           cwr('recordError', errorMsg);
-          throw new Error(`Error fetching wrap up notes data: ${errorMsg}`);
-        }
+          throw new Error(`Error fetching internal notes: ${errorMsg}`);
+        } 
 
-        if (response?.status === 204) { 
-          throw new Error("No Conversation Data Scenario/No Content Returned.");
-        }
-
-        // Parse the JSON response
-        const responseClone = response?.clone(); 
-        const blob = await responseClone?.blob();
-        
-        const responseSizeBytes = blob?.size;
-        console.log(`📦 Response payload size: ${responseSizeBytes} bytes`);
-        
         // Check for empty body
-        const text = await response?.text();
-        if (!text) { 
-            throw new Error("Not 204 Returned; Empty response body fetched");     
-        }
-
-        // Parse only if there's content
-        const wrapupData  = JSON.parse(text);
-
         if (!wrapupData) {
             throw new Error(`No response data found: ${wrapupData}`);
         }
@@ -172,26 +175,35 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
         sessionStorage.setItem(PENDING_ACTION_KEY, JSON.stringify(actionData));
         console.log("Data saved to sessionStorage. Switching editor view...");
 
-        await client.set('comment.type', 'internalNote');
-
         try {
-        const loadstart = performance.now();
-        const eventmodule = "wrap-up-notes-initialization";
+          console.log("Switching comment display")
+          await client.set('comment.type', 'internalNote');
 
-        renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname); 
-
-        const loadend = performance.now();
-        const loadtime = loadend - loadstart; 
-        console.log(`Wrap up notes generated and posted in ${loadtime.toFixed(2)} ms`);
-
-        setTimeout(() => tryRecordPageEvent(eventmodule, loadtime), 1000); 
-
-        } catch (err) {
-          console.error("Wrap up notes rendering error:", err);
-          Sentry.captureException(err);
-          cwr('recordError', err);
-          throw new Error("Issue with Internal Notes rendering");
+        } catch (error) {
+          Sentry.captureException(error);
+          cwr('recordError', error);
         }
+        setTimeout(() => {
+          try {
+            const loadstart = performance.now();
+            const eventmodule = "wrap-up-notes-initialization";
+
+            renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname); 
+
+            const loadend = performance.now();
+            const loadtime = loadend - loadstart; 
+            console.log(`Wrap up notes generated and posted in ${loadtime.toFixed(2)} ms`);
+
+            setTimeout(() => tryRecordPageEvent(eventmodule, loadtime), 1000); 
+
+          } catch (err) {
+            console.error("Wrap up notes rendering error:", err);
+            Sentry.captureException(err);
+            cwr('recordError', err);
+            throw new Error("Issue with Internal Notes rendering");
+          }
+        }, 500);
+        
 
         const loadend = performance.now();
         const loadtime = loadend - loadstart;  
@@ -259,7 +271,7 @@ function recordApiEvent(loadtime, rumsticketid, eventmodule, responseSizeBytes, 
   }
 }
 
-async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname) {
+async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, flag) {
   const loadstart = performance.now();
   const ticket_id = ticketID;
   const agent_id = agentId;
@@ -268,6 +280,17 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
   const innercontainer = document.getElementById("inner-wraper");
   const internalnotesfill = wrapupData?.notes;
   const currentDate = new Date().toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
+  
+  if (flag === "nocontactid"){
+    const alertmessage = `
+        <div id="error-alert">
+            <span onclick="document.getElementById('error-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: white; font-weight: 500;">&times;</span>
+                Error! No Contact ID found for voice contact.
+        </div>
+    `;    
+    innercontainer.insertAdjacentHTML('beforeEnd', alertmessage);
+    return; 
+  }
 
   if (!wrapupData) {
         const alertmessage = `

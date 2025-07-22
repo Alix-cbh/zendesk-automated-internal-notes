@@ -6,6 +6,14 @@
   },
   "defaultLocale": "en",
   "private": true,
+  "parameters": [
+  {
+    "name": "apiKey",
+    "type": "text",
+    "secure": true,
+    "required": true
+  }
+  ],
   "location": {
     "support": {
       "ticket_editor": {
