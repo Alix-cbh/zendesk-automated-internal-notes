@@ -40,12 +40,21 @@ body {
 }
 
 .voice-indicator {
-  margin: 2% 0;
+  margin: 5% 0;
   width: 100%;
   text-align: center;
   justify-content: center;
-  display: inline-block;
- 
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.65rem;
+}
+
+.contact-id-container {
+  width:100%; 
+  padding: 2%; 
+  font-size: 0.6rem;
+  margin: 5% 0;
 }
 
 .voice-svg {

@@ -50,7 +50,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
         console.log("Voice Channel Ticket detected");
         const wrappercontainer = document.getElementById("generate-internal-notes-wrapper-main")
         wrappercontainer.innerHTML += `
-          <div class="voice-indicator"> 
+          <div class="voice-indicator" id="voice-indicator-container"> 
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="voice-svg"><path d="M21.384,17.752a2.108,2.108,0,0,1-.522,3.359,7.543,7.543,0,0,1-5.476.642C10.5,20.523,3.477,13.5,2.247,8.614a7.543,7.543,0,0,1,.642-5.476,2.108,2.108,0,0,1,3.359-.522L8.333,4.7a2.094,2.094,0,0,1,.445,2.328A3.877,3.877,0,0,1,8,8.2c-2.384,2.384,5.417,10.185,7.8,7.8a3.877,3.877,0,0,1,1.173-.781,2.092,2.092,0,0,1,2.328.445Z"/></svg>
           Voice Contact
           </div>
@@ -59,7 +59,6 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
     } else {
       console.log("Non-Voice Ticket, procedding.")
     }*/
-
 
     if (closeButton) {
     closeButton.addEventListener('click', () => {
@@ -93,6 +92,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
  * @param {string} useremail - The email of the ticket requester.
  * @param {string} userfullname - The full name of the ticket requester.
  * @param {number} assigneegroupid - The assigned group id.
+ * @returns {Promise<any>} A promise that resolves with the response data.
  */
 
 async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid){
@@ -111,16 +111,16 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
 
     await client.get("ticket.customField:custom_field_24673769964823").then((data) => {
     contactid = data["ticket.customField:custom_field_24673769964823"];
-  
     if ((assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) && !contactid) {
       console.warn("⚠️ No Contact ID found, field is empty.");
-      renderwrapupnotes(null, null, null, null, null, null, flag = "nocontactid")
+      renderwrapupnotes(null, null, null, null, null, null, flag = "nocontactid", null)
       throw new Error ("No contact id found for contact. Unable to compile");
     } else {
       console.log("✅ Contact ID:", contactid);
-    }
-    })
+    } 
+  })
 
+    
     const conversation = await client.get('ticket.conversation');
     console.log("Ticket Convo:", conversation);
 
@@ -190,8 +190,21 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
 
         await client.set('comment.type', 'internalNote');
 
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const commentObject = await client.get('comment.text');
+        const internalNoteText = commentObject['comment.text'];
+        console.log("Content of internal note:", internalNoteText);
+
+        /*await client.get(['comment.text', 'comment.public']).then(function(data) {
+          if (!data['comment.public']) {
+            const internalNoteText = data['comment.text'];
+            console.log('Internal Note Text:', internalNoteText);
+          }
+        });*/
+
         //Poll to confirm the change has been applied before proceeding.
-        let switched = false;
+        /*let switched = false;
 
         for (let i = 0; i < 40; i++) { // Poll for up to 2 seconds (20 * 100ms)
             const currenttpyeinit = await client.get('comment.type');
@@ -208,16 +221,13 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
 
         if (!switched) {
             console.warn('Comment type did not switch in time, but proceeding with rendering anyway.');
-        }
-
-        //console.log('Clearing editor to set cursor position to the start...');
-        //await client.set('comment.text', 'this is a test');
-
+        }*/
+        
           try {
             const loadstart = performance.now();
             const eventmodule = "wrap-up-notes-initialization";
 
-            renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname); 
+            renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, null, contactid, internalNoteText); 
 
             const loadend = performance.now();
             const loadtime = loadend - loadstart; 
@@ -232,7 +242,6 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
             throw new Error("Issue with Internal Notes rendering");
           }
         
-
         const loadend = performance.now();
         const loadtime = loadend - loadstart;  
         const rumsticketid = ticketID;
@@ -244,8 +253,7 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
         console.error("Internal Notes Fetch and rendering error:", error);
         Sentry.captureException(error);
         renderwrapupnotes(null);
-        cwr('recordError', error); 
-        
+        cwr('recordError', error);   
     } finally {
         spinner.style.display = "none";
         aiinternalnotebutton.style.display = "inline-flex";
@@ -299,7 +307,7 @@ function recordApiEvent(loadtime, rumsticketid, eventmodule, responseSizeBytes, 
   }
 }
 
-async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, flag) {
+async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, flag, contactid, internalNoteText) {
   const loadstart = performance.now();
   const ticket_id = ticketID;
   const agent_id = agentId;
@@ -312,7 +320,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
   if (flag === "nocontactid"){
     const alertmessage = `
         <div id="error-alert">
-            <span onclick="document.getElementById('error-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: white; font-weight: 500;">&times;</span>
+            <span onclick="document.getElementById('error-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: #39434b; font-weight: 500;">&times;</span>
                 Error! No Contact ID found for voice contact.
         </div>
     `;    
@@ -320,10 +328,21 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
     return; 
   }
 
+  if (contactid) {
+    if (!innercontainer.querySelector('.contact-id-container')) {
+      const contactidui = `
+          <div class="contact-id-container">
+              Contact ID(s) - ${contactid}
+          </div>
+      `;    
+      innercontainer.insertAdjacentHTML('beforeEnd', contactidui);
+    }
+  }
+
   if (!wrapupData) {
         const alertmessage = `
             <div id="error-alert">
-                <span onclick="document.getElementById('error-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: white; font-weight: 500;">&times;</span>
+                <span onclick="document.getElementById('error-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: #39434b; font-weight: 500;">&times;</span>
                     Error! No Conversation found/returned for ticket.
             </div>
         `;    
@@ -386,20 +405,27 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
         // Placoholder command to add response data and fill internal notes to editor and set editor space to internal notes
         // const shiftid = String(validShiftIds);
         // console.log("Final Shift id string:", shiftid);
+      //const commentobject= await client.get('comment.text');
+      //const commenttext = commentobject["comment.text"];
+      //console.log("pre-exisiting ticket comment:", commenttext);
 
-      await client.set('comment.text', `
+      const fullnotecontent = `
+          ${internalNoteText || 'N/A'}<br>
           <strong>Date:</strong> ${currentDate}<br>
           <strong>ZD Ticket:</strong> ${ticket_id || ticketID}<br>   
           <strong>Name:</strong> ${user_fullname || userfullname} | <strong>External ID:</strong> ${agent_id || agentId} <br>  
           <strong>Email:</strong> ${user_email || useremail}
           <hr>
-          ${internalnotesfill}`);
+          ${internalnotesfill}
+      `;
+
+      await client.set('comment.text', fullnotecontent);
       // Ticket editor insert end
       
       //Success alert message
       const alertmessage = `
           <div id="success-alert">
-              <span onclick="document.getElementById('success-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: white; font-weight: 500;">&times;</span>
+              <span onclick="document.getElementById('success-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: #39434b; font-weight: 500;">&times;</span>
                   Successfully generated Internal Note!
           </div>
       `;    
@@ -417,13 +443,13 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
         sessionStorage.removeItem(PENDING_ACTION_KEY);
         const alertmessage = `
             <div id="error-main-alert">
-                <span onclick="document.getElementById('error-main-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: white; font-weight: 500;">&times;</span>
+                <span onclick="document.getElementById('error-main-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: #39434b; font-weight: 500;">&times;</span>
                     Error! Internal Note Generation Failed.
             </div>
         `;    
         innercontainer.insertAdjacentHTML('beforeEnd', alertmessage); 
     } finally {
-        setTimeout(() => {client.invoke('app.close');}, 5000);
+        setTimeout(() => {client.invoke('app.close');}, 6000);
     }
   }
 }
