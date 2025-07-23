@@ -410,13 +410,13 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
       //console.log("pre-exisiting ticket comment:", commenttext);
 
       const fullnotecontent = `
-          ${internalNoteText || 'N/A'}<br>
           <strong>Date:</strong> ${currentDate}<br>
           <strong>ZD Ticket:</strong> ${ticket_id || ticketID}<br>   
           <strong>Name:</strong> ${user_fullname || userfullname} | <strong>External ID:</strong> ${agent_id || agentId} <br>  
           <strong>Email:</strong> ${user_email || useremail}
           <hr>
-          ${internalnotesfill}
+          ${internalnotesfill}<br>
+          ${internalNoteText || 'N/A'}
       `;
 
       await client.set('comment.text', fullnotecontent);
