@@ -9,7 +9,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
     console.log(assigneegroupid);
  
     aiinternalnotebuttoncontainer.innerHTML = `
-    <div class="generate-internal-notes-wrapper">
+    <div class="generate-internal-notes-wrapper" id="generate-internal-notes-wrapper-main">
         <div class="button-top-header">Automated Internal Notes Tool
         <span id="closeButton">&times;</span>
         </div>
@@ -30,7 +30,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
         
     `;
 
-    /*if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
+    if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
         console.log("Voice Channel Ticket. Deactivating Button");
         const internalNoteButton = document.getElementById("cta-generate-internal-note");
         const infospan = document.getElementById("info-span");
@@ -42,6 +42,20 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
             infospan.style.display = "none";
             infospandisabled.style.display = "block";
         }
+    } else {
+      console.log("Non-Voice Ticket, procedding.")
+    }
+
+    /*if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
+        console.log("Voice Channel Ticket detected");
+        const wrappercontainer = document.getElementById("generate-internal-notes-wrapper-main")
+        wrappercontainer.innerHTML += `
+          <div class="voice-indicator"> 
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="voice-svg"><path d="M21.384,17.752a2.108,2.108,0,0,1-.522,3.359,7.543,7.543,0,0,1-5.476.642C10.5,20.523,3.477,13.5,2.247,8.614a7.543,7.543,0,0,1,.642-5.476,2.108,2.108,0,0,1,3.359-.522L8.333,4.7a2.094,2.094,0,0,1,.445,2.328A3.877,3.877,0,0,1,8,8.2c-2.384,2.384,5.417,10.185,7.8,7.8a3.877,3.877,0,0,1,1.173-.781,2.092,2.092,0,0,1,2.328.445Z"/></svg>
+          Voice Contact
+          </div>
+        `;
+        
     } else {
       console.log("Non-Voice Ticket, procedding.")
     }*/
@@ -151,7 +165,6 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
                 console.log(`📦 Response payload size: ${responseSizeBytes} bytes`);
             }
 
-            await client.set('comment.type', 'internalNote');
         } catch (error) {
           const status = error.status || 'No response';
           const statusText = error.statusText || 'Unknown error';
@@ -175,7 +188,31 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
         sessionStorage.setItem(PENDING_ACTION_KEY, JSON.stringify(actionData));
         console.log("Data saved to sessionStorage. Switching editor view...");
 
-        
+        await client.set('comment.type', 'internalNote');
+
+        //Poll to confirm the change has been applied before proceeding.
+        let switched = false;
+
+        for (let i = 0; i < 40; i++) { // Poll for up to 2 seconds (20 * 100ms)
+            const currenttpyeinit = await client.get('comment.type');
+            const currentType = currenttpyeinit['comment.type'];
+            console.log("Current comment type:", currentType);
+            if (currentType === 'internalNote') {
+                console.log('Comment type successfully switched to internalNote.');
+                switched = true;
+                break;
+            }
+            // Wait 100ms before the next check.
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        if (!switched) {
+            console.warn('Comment type did not switch in time, but proceeding with rendering anyway.');
+        }
+
+        //console.log('Clearing editor to set cursor position to the start...');
+        //await client.set('comment.text', 'this is a test');
+
           try {
             const loadstart = performance.now();
             const eventmodule = "wrap-up-notes-initialization";
@@ -350,7 +387,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
         // const shiftid = String(validShiftIds);
         // console.log("Final Shift id string:", shiftid);
 
-      await client.invoke('ticket.editor.insert', `
+      await client.set('comment.text', `
           <strong>Date:</strong> ${currentDate}<br>
           <strong>ZD Ticket:</strong> ${ticket_id || ticketID}<br>   
           <strong>Name:</strong> ${user_fullname || userfullname} | <strong>External ID:</strong> ${agent_id || agentId} <br>  

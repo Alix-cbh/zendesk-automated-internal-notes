@@ -55,11 +55,8 @@ async function initApp(client) {
 
     const ticketID = context?.ticketId;
 
-    const editorchannel = await client.get('ticket.editor.targetChannel.name')
+    const editorchannel = await client.get('ticket.editor.targetChannel.name');
     console.log("Editor Channel fetched:", editorchannel);
-
-    const editorchannelone = await client.get('comment.type')
-    console.log("Editor One Channel fetched:", editorchannelone);
 
     const assingee = await client.get("ticket.assignee");
     console.log("Assigne fetched", assingee);

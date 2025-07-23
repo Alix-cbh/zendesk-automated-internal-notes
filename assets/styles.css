@@ -36,6 +36,35 @@ body {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%23FFD700' viewBox='0 0 24 24'><path d='M13 2L3 14h7l-1 8 10-12h-7l1-8z'/></svg>");
   background-size: contain;
   background-repeat: no-repeat;
+  transition: 1s ease-in-out;
+}
+
+.voice-indicator {
+  margin: 2% 0;
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+  display: inline-block;
+ 
+}
+
+.voice-svg {
+  width: 15px;
+  height: 15px;
+}
+
+.generate-internal-notes-button-cta:hover .lightning-icon{
+  animation: spinY 2s linear infinite;
+  transform-style: preserve-3d; /* Ensures 3D perspective is respected */
+}
+
+@keyframes spinY {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
 }
 
 .externalcontainer {
@@ -48,7 +77,7 @@ body {
     width: 70%;
     font-size: 0.75rem;
     font-weight: 450;
-    margin: 0% auto 5% auto;
+    margin: 0% auto 10% auto;
     text-align: center;
 }
 
@@ -110,28 +139,29 @@ body {
 
 #success-alert {
   position: relative; 
-  border: 1px solid rgb(218, 255, 213); 
-  background-color: rgb(69, 255, 66); 
+  border: 1px solid #a6f1a6; 
+  background-color: #f0fff4; 
+  color: #276749; 
   font-weight: 500; 
-  color: #39434b;
-  padding: 2% 2% 2% 2% ; 
-  border-radius: 5px; 
+  padding: 2%; 
+  border-radius: 8px; 
   margin: 0% auto 5% auto;
-  font-size: 0.6rem;
+  font-size: 0.7rem;
+  cursor: pointer;
 }
 
 #error-main-alert {
   position: relative; 
-  border: 1px solid red; 
-  background-color: pink; 
-  color: #39434b;
+  border: 1px solid rgb(255, 62, 24); 
+  background-color: rgb(252, 224, 229); 
+  color: #731c0d; /* Dark red/brown text */
   font-weight: 500; 
-  padding: 2% 2% 2% 2% ; 
-  border-radius: 5px; 
+  padding: 2%; 
+  border-radius: 8px; 
   margin: 0% auto 5% auto;
-  font-size: 0.6rem;
+  font-size: 0.7rem;
+   cursor: pointer;
 }
-
 
 
 #cta-generate-internal-note:disabled {
@@ -145,7 +175,12 @@ body {
 }
 
 .generate-internal-notes-button-cta {
-background-color: #39434b; 
+background: linear-gradient(135deg, 
+  #39434b 0%, 
+  #414c55 40%, 
+  #495561 70%, 
+  #525e6d 100%
+);
 color: #ffff;
 cursor: pointer;
 box-shadow: 0 4px 12px rgba(0, 21, 44, 0.134); /* softened hover shadow with #007bff */
@@ -164,10 +199,9 @@ margin: 10% 0% 6% 0%;
 }
 
 .generate-internal-notes-button-cta:hover {
-  background-color: #5C6970;
-  color: #ffff;
-  box-shadow: 0 4px 12px rgba(0, 21, 44, 0.23); /* softened hover shadow with #007bff */
-  transform: translateY(-1px) scale(1.05);
+  transform: translateY(-2px); /* Slight lift effect */
+  box-shadow: 0 7px 14px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+  filter: brightness(1.1);
 }
 
 .button-text {
