@@ -415,8 +415,8 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
           <strong>Name:</strong> ${user_fullname || userfullname} | <strong>External ID:</strong> ${agent_id || agentId} <br>  
           <strong>Email:</strong> ${user_email || useremail}
           <hr>
-          ${internalnotesfill}<br>
-          ${internalNoteText || 'N/A'}
+          ${internalnotesfill}<br><br>
+          ${internalNoteText || ''}
       `;
 
       await client.set('comment.text', fullnotecontent);
