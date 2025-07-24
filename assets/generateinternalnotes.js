@@ -30,7 +30,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
         
     `;
 
-    if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
+    /*if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
         console.log("Voice Channel Ticket. Deactivating Button");
         const internalNoteButton = document.getElementById("cta-generate-internal-note");
         const infospan = document.getElementById("info-span");
@@ -44,9 +44,9 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
         }
     } else {
       console.log("Non-Voice Ticket, procedding.")
-    }
+    }*/
 
-    /*if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
+    if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
         console.log("Voice Channel Ticket detected");
         const wrappercontainer = document.getElementById("generate-internal-notes-wrapper-main")
         wrappercontainer.innerHTML += `
@@ -58,7 +58,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
         
     } else {
       console.log("Non-Voice Ticket, procedding.")
-    }*/
+    }
 
     if (closeButton) {
     closeButton.addEventListener('click', () => {

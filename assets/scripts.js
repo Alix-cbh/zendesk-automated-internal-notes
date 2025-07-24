@@ -55,9 +55,6 @@ async function initApp(client) {
 
     const ticketID = context?.ticketId;
 
-    const editorchannel = await client.get('ticket.editor.targetChannel.name');
-    console.log("Editor Channel fetched:", editorchannel);
-
     const assingee = await client.get("ticket.assignee");
     console.log("Assigne fetched", assingee);
 
@@ -82,9 +79,6 @@ async function initApp(client) {
     console.log("Email Logged for session:", useremail);
     console.log("User Fullname Logged for session:", userfullname);
     console.log("Group ID Logged for session:", assigneegroupid);
-
-    const ticketchannel = await client.get('ticket.via'); 
-    console.log("Ticket Channel:", ticketchannel);
 
     generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid);
 
