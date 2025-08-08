@@ -321,7 +321,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
     const alertmessage = `
         <div id="error-alert">
             <span onclick="document.getElementById('error-alert').remove();" style="position: absolute; top: 5px; right: 10px; cursor: pointer; font-weight: bold; color: #39434b; font-weight: 500;">&times;</span>
-                Error! No Contact ID found for voice contact.
+                Error! No Contact ID found for voice contact. Please ensure you attach the call to this ticket from the Amazon Connect Control Panel before generating note. 
         </div>
     `;    
     innercontainer.insertAdjacentHTML('beforeEnd', alertmessage);
