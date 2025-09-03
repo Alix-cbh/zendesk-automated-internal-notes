@@ -11,7 +11,7 @@
  */
 
 //ENSURE TESTING = FALSE FOR PRODUCTION, THIS PARAM CONTROLS SECURE SETTINGS API REQUEST FOR DEV VS PRODUCTION
-async function fetchWithTimeoutAndRetry(client, url, options = {}, retries = 2, timeout = 40000, testing = true) {
+async function fetchWithTimeoutAndRetry(client, url, options = {}, retries = 2, timeout = 40000, testing = false) {
   
   if(testing){
     return await fetchWithTimeoutAndRetrytesting(url, options, retries, timeout);
