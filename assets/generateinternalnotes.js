@@ -315,6 +315,33 @@ function recordApiEvent(loadtime, rumsticketid, eventmodule, responseSizeBytes, 
   }
 }
 
+/**
+ * Safely adds a tag to the current Zendesk ticket without removing existing tags.
+ * @param {object} client - The ZAF client object.
+ * @param {string} tagToAdd - The tag to be added to the ticket.
+ */
+async function addTicketTag(client, tagToAdd) {
+  try {
+    // 1. Get the current list of tags
+    const data = await client.get('ticket.tags');
+    const currentTags = data['ticket.tags'] || [];
+
+    // 2. Use a Set to automatically handle duplicates and add the new tag
+    const tagSet = new Set(currentTags);
+    tagSet.add(tagToAdd);
+    const updatedTags = [...tagSet]; // Convert back to an array
+
+    // 3. Set the new, complete list of tags back on the ticket
+    await client.set('ticket.tags', updatedTags);
+    console.log(`✅ Tag '${tagToAdd}' was added successfully.`);
+
+  } catch (error) {
+    console.error(`❌ Error adding tag '${tagToAdd}':`, error);
+    // Optionally, notify the agent if the tag fails to apply
+    client.invoke('notify', 'Error: Could not apply ticket tag.', 'error');
+  }
+}
+
 async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, flag, contactid, internalNoteText) {
   const loadstart = performance.now();
   const ticket_id = ticketID;
@@ -360,62 +387,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
 
         console.log("🔄 Rendering Internal Notes");
 
-        // Start - Get custom field data for Internal Note fill (For any additional ticket fields requried)
         
-        /*const hexRegex = /^[a-fA-F0-9]{24}$/;
-        let shiftIdString; 
-        let atLeastOneIdIsValid = false; // Flag to indicate if at least one ID is valid
-        let shiftIdsArray;
-        let validShiftIds = []; // Array to store only the valid Shift IDs
-
-
-        await client.get("ticket.customField:custom_field_6603666641559").then((data) => {
-        shiftIdString = data ? data["ticket.customField:custom_field_6603666641559"] : null;
-
-              if (!shiftIdString || shiftIdString.trim() === '') {
-                  console.warn("Shift ID field is empty.");
-                  atLeastOneIdIsValid = false;
-              } else {
-                  console.log("Fetched Shift ID string:", shiftIdString);
-
-              //Regex Compiler
-              shiftIdsArray = shiftIdString.split(/[^a-fA-F0-9]+/).filter(id => id);
-
-              if (shiftIdsArray.length === 0) {
-                  console.warn("No potential Shift IDs found after splitting the string.");
-                  atLeastOneIdIsValid = false;
-                  return; // Exit if no IDs are found
-              }
-                  
-              console.log("Found potential IDs to check:", shiftIdsArray);
-
-                // 2. Use Array.every() to ensure ALL extracted parts are valid.
-                validShiftIds = shiftIdsArray.filter(id => {
-                  const isValid = hexRegex.test(id);
-                    if (!isValid) {
-                        console.warn(`❌ Invalid Shift ID found: "${id}"`);
-                    }
-                    return isValid; 
-                });
-
-              atLeastOneIdIsValid = validShiftIds.length > 0;
-
-              if (atLeastOneIdIsValid) {
-                  console.log("✅ At least one valid Shift ID was found.");
-                  console.log("Array of valid Shift IDs:", validShiftIds);
-              } else {
-                  console.error("No valid Shift IDs were found in the list.");
-              }
-            }
-        });*/
-
-
-        // Placoholder command to add response data and fill internal notes to editor and set editor space to internal notes
-        // const shiftid = String(validShiftIds);
-        // console.log("Final Shift id string:", shiftid);
-      //const commentobject= await client.get('comment.text');
-      //const commenttext = commentobject["comment.text"];
-      //console.log("pre-exisiting ticket comment:", commenttext);
 
       const fullnotecontent = `
           <strong>Date:</strong> ${currentDate}<br>
@@ -430,6 +402,11 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
       await client.set('comment.text', fullnotecontent);
       // Ticket editor insert end
       
+      // --- ADD THIS LINE ---
+      // After setting the note, call the function to add the tag
+      await addTicketTag(client, 'automated_internal_note_rendered');
+      // --- END ---
+
       //Success alert message
       const alertmessage = `
           <div id="success-alert">
