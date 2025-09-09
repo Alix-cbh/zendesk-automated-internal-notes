@@ -327,7 +327,7 @@ async function setCurrentTimeToField(client) {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-    hour12: false
+    hour12: true
   });
 
   client.set('ticket.customField:custom_field_34818453277591', formattedTime)
