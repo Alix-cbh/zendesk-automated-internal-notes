@@ -315,31 +315,28 @@ function recordApiEvent(loadtime, rumsticketid, eventmodule, responseSizeBytes, 
   }
 }
 
-/**
- * Safely adds a tag to the current Zendesk ticket without removing existing tags.
- * @param {object} client - The ZAF client object.
- * @param {string} tagToAdd - The tag to be added to the ticket.
- */
-async function addTicketTag(client, tagToAdd) {
-  try {
-    // 1. Get the current list of tags
-    const data = await client.get('ticket.tags');
-    const currentTags = data['ticket.tags'] || [];
+async function setCurrentTimeToField(client) {
+  const now = new Date();
 
-    // 2. Use a Set to automatically handle duplicates and add the new tag
-    const tagSet = new Set(currentTags);
-    tagSet.add(tagToAdd);
-    const updatedTags = [...tagSet]; // Convert back to an array
+  // Format the time in Pacific Time with date + time
+  const formattedTime = now.toLocaleString("en-US", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  });
 
-    // 3. Set the new, complete list of tags back on the ticket
-    await client.set('ticket.tags', updatedTags);
-    console.log(`✅ Tag '${tagToAdd}' was added successfully.`);
-
-  } catch (error) {
-    console.error(`❌ Error adding tag '${tagToAdd}':`, error);
-    // Optionally, notify the agent if the tag fails to apply
-    client.invoke('notify', 'Error: Could not apply ticket tag.', 'error');
-  }
+  client.set('ticket.customField:custom_field_34818453277591', formattedTime)
+    .then(() => {
+      console.log(`Pacific Time set successfully: ${formattedTime}`);
+    })
+    .catch(err => {
+      console.error("Error setting time field:", err);
+    });
 }
 
 async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, flag, contactid, internalNoteText) {
@@ -402,10 +399,7 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
       await client.set('comment.text', fullnotecontent);
       // Ticket editor insert end
       
-      // --- ADD THIS LINE ---
-      // After setting the note, call the function to add the tag
-      await addTicketTag(client, 'automated_internal_note_rendered');
-      // --- END ---
+      await setCurrentTimeToField(client);
 
       //Success alert message
       const alertmessage = `
