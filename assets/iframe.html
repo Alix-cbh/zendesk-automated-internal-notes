@@ -10,6 +10,67 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    
+    <!-- Placeholder Highlighting Styles -->
+    <style>
+      .placeholder-highlight {
+        background-color: #ffeb3b !important;
+        color: #d84315 !important;
+        font-weight: bold !important;
+        padding: 1px 3px !important;
+        border-radius: 3px !important;
+        border: 1px solid #ff9800 !important;
+        box-shadow: 0 1px 3px rgba(255, 152, 0, 0.3) !important;
+        animation: placeholder-pulse 2s ease-in-out infinite !important;
+      }
+      
+      @keyframes placeholder-pulse {
+        0%, 100% { 
+          background-color: #ffeb3b;
+          box-shadow: 0 1px 3px rgba(255, 152, 0, 0.3);
+        }
+        50% { 
+          background-color: #fff176;
+          box-shadow: 0 1px 6px rgba(255, 152, 0, 0.6);
+        }
+      }
+      
+      #placeholder-highlight-overlay {
+        position: relative !important;
+        background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%) !important;
+        border: 2px solid #ffc107 !important;
+        border-radius: 8px !important;
+        padding: 16px !important;
+        margin: 12px 0 !important;
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2) !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      }
+      
+      .placeholder-overlay-header {
+        background: rgba(255, 235, 59, 0.15) !important;
+        border: 1px solid #ff9800 !important;
+        border-radius: 6px !important;
+        padding: 8px 12px !important;
+        margin-bottom: 8px !important;
+        font-size: 13px !important;
+        color: #d84315 !important;
+        font-weight: 600 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+      }
+      
+      .placeholder-overlay-content {
+        padding: 12px !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        border-radius: 6px !important;
+        border: 1px solid #e0e0e0 !important;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+        word-wrap: break-word !important;
+      }
+    </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -61,6 +122,8 @@
   <script src="scripts.js" type="module"></script>
   <script src="config.js" type="module"></script>
   <script src="utils.js" type="module"></script>
+  <script src="placeholder-config.js" type="module"></script>
+  <script src="placeholder-guard.js" type="module"></script>
 
 
   

@@ -1,4 +1,5 @@
 import { generateinternalnotescontainer, renderwrapupnotes } from './generateinternalnotes.js'
+import { validateAndNotify, createDOMFallbackObserver } from './placeholder-guard.js'
 
 /*document.addEventListener("DOMContentLoaded", () => {
   initApp();
@@ -11,6 +12,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const pendingActionJSON = sessionStorage.getItem(PENDING_ACTION_KEY);
     const client = ZAFClient.init();
     await client.invoke("resize", { width: "310px", height: "235px" });
+
+    // Initialize Placeholder Guard - TOPS-1216
+    initializePlaceholderGuard(client);
 
           if (pendingActionJSON) {
               console.log("Pending action found after reload. Resuming...");
@@ -116,6 +120,48 @@ function tryRecordPageEvent(ticketID, loadTime, attempts = 0) {
   } else {
     console.error("❌ Failed to record AWS RUM event: cwr not ready");
   }
+}
+
+/**
+ * Initialize Placeholder Guard functionality
+ * TOPS-1216: Configure Zendesk to prevent sending messages with unedited placeholders
+ * @param {Object} client - ZAF client instance
+ */
+function initializePlaceholderGuard(client) {
+  console.log('[PlaceholderGuard] Initializing placeholder detection safeguard...');
+
+  // Set up ticket.save event handler - primary mechanism
+  client.on('ticket.save', async function() {
+    console.log('[PlaceholderGuard] ticket.save event fired - starting validation');
+    
+    try {
+      // Validate the comment for placeholders using async/await
+      const isValid = await validateAndNotify(client);
+      
+      if (isValid) {
+        console.log('[PlaceholderGuard] ✅ Validation passed - allowing save');
+        return Promise.resolve(); // Allow save to proceed
+      } else {
+        console.warn('[PlaceholderGuard] ❌ Validation failed - blocking save due to placeholders');
+        // Return rejected Promise with error message to block save
+        const errorMessage = '⚠️ Message contains unedited placeholders. Please edit all placeholders before submitting.';
+        return Promise.reject(new Error(errorMessage));
+      }
+      
+    } catch (error) {
+      console.error('[PlaceholderGuard] ⚠️ Error during validation:', error);
+      // On validation errors, allow submission to avoid breaking workflow
+      return Promise.resolve();
+    }
+  });
+
+  // Set up DOM fallback observer - secondary mechanism for edge cases
+  const domObserver = createDOMFallbackObserver(client);
+  
+  // Store cleanup function for potential future use
+  window.placeholderGuardCleanup = domObserver.cleanup;
+
+  console.log('[PlaceholderGuard] Initialization complete - safeguard active');
 }
 
 
