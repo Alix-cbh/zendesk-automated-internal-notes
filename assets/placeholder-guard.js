@@ -11,6 +11,7 @@ import {
   PLACEHOLDER_WHITELIST, 
   PLACEHOLDER_CONFIG 
 } from './placeholder-config.js';
+import { validateWordGuard } from './word-guard.js';
 
 /**
  * Detects placeholders in the given text
@@ -376,6 +377,23 @@ export async function validateAndNotify(client) {
   console.log('[PlaceholderGuard] 🚀 Starting validateAndNotify...');
   
   try {
+    // Skip validation for internal notes; only enforce on public replies
+    try {
+      const visibility = await client.get(['ticket.comment.isPublic', 'comment.type']);
+      const isPublic = visibility['ticket.comment.isPublic'];
+      const commentType = visibility['comment.type'];
+      const isInternal = (isPublic === false) || (String(commentType || '').toLowerCase() === 'internalnote');
+      if (isInternal) {
+        console.log('[PlaceholderGuard] ℹ️ Internal note detected — skipping placeholder validation');
+        return true;
+      }
+    } catch (visErr) {
+      // If we cannot determine visibility, proceed with validation (fail-open only on technical errors later)
+      if (PLACEHOLDER_CONFIG.ENABLE_LOGGING) {
+        console.warn('[PlaceholderGuard] Could not determine comment visibility; proceeding with validation', visErr);
+      }
+    }
+
     const validation = await validateTicketComment(client);
     
     console.log('[PlaceholderGuard] 📋 Validation complete:', {
@@ -455,9 +473,42 @@ export function createDOMFallbackObserver(client) {
       }
 
       try {
-        const isValid = await validateAndNotify(client);
-        
-        if (!isValid) {
+        // Skip validations for internal notes
+        try {
+          const visibility = await client.get(['ticket.comment.isPublic', 'comment.type']);
+          const isPublic = visibility['ticket.comment.isPublic'];
+          const commentType = visibility['comment.type'];
+          const isInternal = (isPublic === false) || (String(commentType || '').toLowerCase() === 'internalnote');
+          if (isInternal) {
+            if (PLACEHOLDER_CONFIG.ENABLE_LOGGING) {
+              console.log('[Guards] DOM fallback: Internal note detected — skipping validations');
+            }
+            return; // allow submission
+          }
+        } catch (visErr) {
+          if (PLACEHOLDER_CONFIG.ENABLE_LOGGING) {
+            console.warn('[PlaceholderGuard] DOM fallback: Could not determine visibility; proceeding with validations', visErr);
+          }
+        }
+
+        // Run both guards
+        const placeholdersOk = await validateAndNotify(client);
+        let wordGuardOk = true;
+        try {
+          const wgResult = await validateWordGuard(client);
+          wordGuardOk = wgResult.isValid;
+          if (!wgResult.isValid) {
+            // Optionally notify the user with the word guard message
+            try { await client.invoke('notify', wgResult.message, 'error'); } catch (_) {}
+          }
+        } catch (wgErr) {
+          if (PLACEHOLDER_CONFIG.ENABLE_LOGGING) {
+            console.warn('[WordGuard] DOM fallback: Validation error; allowing save', wgErr);
+          }
+          wordGuardOk = true; // fail-open on WG technical error
+        }
+
+        if (!placeholdersOk || !wordGuardOk) {
           // Prevent the form submission
           event.preventDefault();
           event.stopPropagation();
@@ -473,7 +524,7 @@ export function createDOMFallbackObserver(client) {
           }, 2000); // Re-enable after 2 seconds
           
           if (PLACEHOLDER_CONFIG.ENABLE_LOGGING) {
-            console.log('[PlaceholderGuard] DOM fallback: Blocked submission due to placeholders');
+            console.log('[Guards] DOM fallback: Blocked submission due to validation failure', { placeholdersOk, wordGuardOk });
           }
           
           return false;

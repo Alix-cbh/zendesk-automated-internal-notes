@@ -12,6 +12,26 @@
     "type": "text",
     "secure": true,
     "required": true
+  },
+  {
+    "name": "enableWordGuard",
+    "type": "checkbox",
+    "required": false,
+    "default": true,
+    "label": "Enable Restricted/Unprofessional Word Guard"
+  },
+  {
+    "name": "restrictedWords",
+    "type": "text",
+    "required": false,
+    "default": "clpboardhealth",
+    "label": "Restricted words (comma-separated)"
+  },
+  {
+    "name": "unprofessionalWords",
+    "type": "text",
+    "required": false,
+    "label": "Unprofessional words (comma-separated)"
   }
   ],
   "location": {

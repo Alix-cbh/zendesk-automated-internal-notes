@@ -5,20 +5,21 @@
 
 export const PLACEHOLDER_PATTERNS = {
   SQUARE_BRACKETS: /\[[^\]]*\]/g,
-  
-  TEMPLATE_VARIABLES: /\{\{.*?\}\}/g,
+  BARE_LEFT_BRACKET: /\[/g,
+  BARE_RIGHT_BRACKET: /\]/g,
   
   DUMMY_TOKENS: /\bXX+\b/gi,
   
   UNDERSCORE_PLACEHOLDERS: /__[A-Za-z0-9_]+__/g,
   
-  CUSTOM_PATTERNS: []
+  CUSTOM_PATTERNS: [/\[.*?\]/g]
 };
 
 export const COMBINED_PLACEHOLDER_REGEX = new RegExp(
   [
     PLACEHOLDER_PATTERNS.SQUARE_BRACKETS.source,
-    PLACEHOLDER_PATTERNS.TEMPLATE_VARIABLES.source,
+    PLACEHOLDER_PATTERNS.BARE_LEFT_BRACKET.source,
+    PLACEHOLDER_PATTERNS.BARE_RIGHT_BRACKET.source,
     PLACEHOLDER_PATTERNS.DUMMY_TOKENS.source,
     PLACEHOLDER_PATTERNS.UNDERSCORE_PLACEHOLDERS.source,
     ...PLACEHOLDER_PATTERNS.CUSTOM_PATTERNS.map(pattern => pattern.source || pattern)
@@ -26,16 +27,7 @@ export const COMBINED_PLACEHOLDER_REGEX = new RegExp(
   'gi'
 );
 
-/**
- * Whitelist of acceptable patterns that should not be flagged as placeholders
- * These are legitimate uses of brackets/patterns that shouldn't trigger warnings
- */
 export const PLACEHOLDER_WHITELIST = [
-  // /\[link\]/gi,
-  // /\[url\]/gi,
-  // /\[email\]/gi,
-  // /\[phone\]/gi,
-  // /\[address\]/gi,
 ];
 
 /**

@@ -1,5 +1,6 @@
 import { generateinternalnotescontainer, renderwrapupnotes } from './generateinternalnotes.js'
 import { validateAndNotify, createDOMFallbackObserver } from './placeholder-guard.js'
+import { validateWordGuard } from './word-guard.js'
 
 /*document.addEventListener("DOMContentLoaded", () => {
   initApp();
@@ -135,18 +136,35 @@ function initializePlaceholderGuard(client) {
     console.log('[PlaceholderGuard] ticket.save event fired - starting validation');
     
     try {
-      // Validate the comment for placeholders using async/await
-      const isValid = await validateAndNotify(client);
+      // 0) Skip all validations for internal notes (only enforce on public replies)
+      const visibility = await client.get(['ticket.comment.isPublic', 'comment.type']);
+      const isPublic = visibility['ticket.comment.isPublic'];
+      const commentType = visibility['comment.type'];
+      const isInternal = (isPublic === false) || (String(commentType || '').toLowerCase() === 'internalnote');
+      if (isInternal) {
+        console.log('[Guards] ℹ️ Internal note detected — skipping validations');
+        return Promise.resolve();
+      }
+
+      // 1) Placeholder validation
+      const placeholdersOk = await validateAndNotify(client);
       
-      if (isValid) {
-        console.log('[PlaceholderGuard] ✅ Validation passed - allowing save');
-        return Promise.resolve(); // Allow save to proceed
-      } else {
-        console.warn('[PlaceholderGuard] ❌ Validation failed - blocking save due to placeholders');
-        // Return rejected Promise with error message to block save
+
+      // 2) Word guard validation (restricted/unprofessional)
+      const wgResult = await validateWordGuard(client);
+      if (!wgResult.isValid) {
+        console.warn('[WordGuard] ❌ Blocking save due to restricted/unprofessional words:', wgResult.matches);
+        return Promise.reject(new Error(wgResult.message));
+      }
+
+      if (!placeholdersOk) {
+        console.warn('[PlaceholderGuard] ❌ Blocking save due to placeholders');
         const errorMessage = '⚠️ Message contains unedited placeholders. Please edit all placeholders before submitting.';
         return Promise.reject(new Error(errorMessage));
       }
+
+      console.log('[Guards] ✅ All validations passed - allowing save');
+      return Promise.resolve();
       
     } catch (error) {
       console.error('[PlaceholderGuard] ⚠️ Error during validation:', error);
