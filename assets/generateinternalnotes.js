@@ -4,6 +4,20 @@ import { apiKey, apiUrl } from "./config.js";
 
 const PENDING_ACTION_KEY = 'zendeskApp_pendingAction';
 
+/**
+ * Maps assignee group IDs to team names
+ * @param {number} groupId - The assignee group ID
+ * @returns {string|null} Team name or null if not mapped
+ */
+function getTeamFromGroupId(groupId) {
+  const teamMapping = {
+    17837467796759: 'docs', // Tier 1 - Documents Chat
+    29725263631127: 'docs'  // Tier 1 - Documents Voice
+  };
+
+  return teamMapping[groupId] || null;
+}
+
 async function generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid){
     const aiinternalnotebuttoncontainer = document.getElementById("ctaexternalcontiner"); 
     console.log(assigneegroupid);
@@ -108,12 +122,15 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
     let requestpayloadBytesize; 
 
     let contactid;
-    let shiftID; 
+    let shiftID;
+    const team = getTeamFromGroupId(assigneegroupid);
+    console.log("Team mapped from group ID:", team);
+
     await client.get("ticket.customField:custom_field_24673769964823").then((data) => {
       contactid = data["ticket.customField:custom_field_24673769964823"];
       if ((assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) && !contactid) {
         console.warn("⚠️ No Contact ID found, field is empty.");
-        renderwrapupnotes(null, null, null, null, null, null, flag = "nocontactid", null)
+        renderwrapupnotes(null, null, null, null, null, null, "nocontactid", null)
         throw new Error ("No contact id found for contact. Unable to compile");
       } else {
         console.log("✅ Contact ID:", contactid);
@@ -162,8 +179,8 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
                 headers: {
                     'Content-Type': 'application/json',
                     'x-api-key': apiKey
-                },  
-                body: JSON.stringify({ messages : requestticketinfo, ticket_id : ticketID, contact_id: contactid, shift_id: shiftID })
+                },
+                body: JSON.stringify({ messages : requestticketinfo, ticket_id : ticketID, contact_id: contactid, shift_id: shiftID, team: team })
             });
 
             // Calculate response size from the returned data
