@@ -18,7 +18,7 @@ function getTeamFromGroupId(groupId) {
   return teamMapping[groupId] || null;
 }
 
-async function generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid){
+async function generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId){
     const aiinternalnotebuttoncontainer = document.getElementById("ctaexternalcontiner"); 
     console.log(assigneegroupid);
  
@@ -94,7 +94,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
 
     const button = document.getElementById("cta-generate-internal-note");
     // Remove all old click handlers and add only one
-    button.onclick = () => fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid);   
+    button.onclick = () => fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId);   
 
 }
 
@@ -106,10 +106,11 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
  * @param {string} useremail - The email of the ticket requester.
  * @param {string} userfullname - The full name of the ticket requester.
  * @param {number} assigneegroupid - The assigned group id.
+ * @param {number} assigneeId - The ID of the ZD agent
  * @returns {Promise<any>} A promise that resolves with the response data.
  */
 
-async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid){
+async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId){
     const loadstart = performance.now(); 
     const eventmodule = "fetch-internal-notes-main";
     const aiinternalnotebutton = document.getElementById("cta-generate-internal-note"); 
@@ -180,7 +181,7 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
                     'Content-Type': 'application/json',
                     'x-api-key': apiKey
                 },
-                body: JSON.stringify({ messages : requestticketinfo, ticket_id : ticketID, contact_id: contactid, shift_id: shiftID, team: team })
+                body: JSON.stringify({ messages : requestticketinfo, ticket_id : ticketID, contact_id: contactid, shift_id: shiftID, team: team, assignee: assigneeId})
             });
 
             // Calculate response size from the returned data
