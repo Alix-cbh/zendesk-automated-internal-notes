@@ -30,11 +30,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                   const useremail = pendingAction.data.useremail; 
                   const userfullname = pendingAction.data.userfullname;
                   const assigneegroupid = pendingAction.data.assigneegroupid;
+                  const assigneeId = pendingAction.data.assigneeId;
                   const wrapupData = pendingAction.data.wrapupData;
 
                   await client.set('comment.type', 'internalNote');
 
-                  await generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid);
+                  await generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId);
                   await renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname);
               }
           } else {
@@ -64,6 +65,7 @@ async function initApp(client) {
     console.log("Assigne fetched", assingee);
 
     const assigneegroupid = assingee["ticket.assignee"].group?.id;
+    const assigneeId = assignee["ticket.assignee"].user?.id;
     
     const requesterData = await client.get("ticket.requester");
     console.log("Requester fetched", requesterData);
@@ -79,13 +81,15 @@ async function initApp(client) {
     localStorage.setItem("username", userfullname);
     localStorage.setItem("username", userfullname);
     localStorage.setItem("username", assigneegroupid);
+    localStorage.setItem("assigneeId", assigneeId);
     console.log("Ticket Logged for session:", ticketID);
     console.log("Agent ID for session:", agentId);
     console.log("Email Logged for session:", useremail);
     console.log("User Fullname Logged for session:", userfullname);
     console.log("Group ID Logged for session:", assigneegroupid);
+    console.log("Assignee ID Logged for session:", assigneeId);
 
-    generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid);
+    generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId);
 
     const appLoadEnd = performance.now();
     const loadTime = appLoadEnd - appLoadStart;
