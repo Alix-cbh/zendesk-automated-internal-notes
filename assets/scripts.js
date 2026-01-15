@@ -65,7 +65,7 @@ async function initApp(client) {
     console.log("Assigne fetched", assingee);
 
     const assigneegroupid = assingee["ticket.assignee"].group?.id;
-    const assigneeId = assignee["ticket.assignee"].user?.id;
+    const assigneeId = assingee["ticket.assignee"].user?.id;
     
     const requesterData = await client.get("ticket.requester");
     console.log("Requester fetched", requesterData);
