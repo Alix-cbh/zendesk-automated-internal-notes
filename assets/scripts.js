@@ -32,10 +32,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                   const assigneegroupid = pendingAction.data.assigneegroupid;
                   const assigneeId = pendingAction.data.assigneeId;
                   const wrapupData = pendingAction.data.wrapupData;
+                  const currentAgentId = pendingAction.data.currentAgentId;
+                  const currentAgentEmail = pendingAction.data.currentAgentEmail;
+                  const currentAgentName = pendingAction.data.currentAgentName;
+                  const currentAgentGroupId = pendingAction.data.currentAgentGroupId;
+                  const currentAgentGroupName = pendingAction.data.currentAgentGroupName;
 
                   await client.set('comment.type', 'internalNote');
 
-                  await generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId);
+                  await generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId, currentAgentId, currentAgentEmail, currentAgentName, currentAgentGroupId, currentAgentGroupName);
                   await renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname);
               }
           } else {
@@ -75,6 +80,26 @@ async function initApp(client) {
     const useremail = user?.email;
     const userfullname = user?.name;
 
+    // Get current logged-in agent (who is using the app)
+    const currentAgentData = await client.get("currentUser");
+    console.log("Current Agent Data fetched:", currentAgentData);
+    const currentAgent = currentAgentData["currentUser"];
+    const currentAgentId = currentAgent?.id;
+    const currentAgentEmail = currentAgent?.email;
+    const currentAgentName = currentAgent?.name;
+
+    // Get current agent's group
+    const currentAgentGroupData = await client.get("currentUser.groups");
+    const currentAgentGroup = currentAgentGroupData["currentUser.groups"]?.[0];
+    const currentAgentGroupId = currentAgentGroup?.id;
+    const currentAgentGroupName = currentAgentGroup?.name;
+
+    console.log("Current Agent ID:", currentAgentId);
+    console.log("Current Agent Email:", currentAgentEmail);
+    console.log("Current Agent Name:", currentAgentName);
+    console.log("Current Agent Group ID:", currentAgentGroupId);
+    console.log("Current Agent Group Name:", currentAgentGroupName);
+
     localStorage.setItem("ticketId", ticketID);
     localStorage.setItem("agentID", agentId);
     localStorage.setItem("useremail", useremail);
@@ -89,7 +114,7 @@ async function initApp(client) {
     console.log("Group ID Logged for session:", assigneegroupid);
     console.log("Assignee ID Logged for session:", assigneeId);
 
-    generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId);
+    generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId, currentAgentId, currentAgentEmail, currentAgentName, currentAgentGroupId, currentAgentGroupName);
 
     const appLoadEnd = performance.now();
     const loadTime = appLoadEnd - appLoadStart;
