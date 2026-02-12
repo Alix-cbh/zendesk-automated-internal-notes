@@ -18,7 +18,7 @@ function getTeamFromGroupId(groupId) {
   return teamMapping[groupId] || null;
 }
 
-async function generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId, currentAgentId, currentAgentEmail, currentAgentName, currentAgentGroupId, currentAgentGroupName){
+async function generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneegroupname, assigneeId, currentAgentId, currentAgentEmail, currentAgentName){
     const aiinternalnotebuttoncontainer = document.getElementById("ctaexternalcontiner"); 
     console.log(assigneegroupid);
  
@@ -94,7 +94,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
 
     const button = document.getElementById("cta-generate-internal-note");
     // Remove all old click handlers and add only one
-    button.onclick = () => fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId, currentAgentId, currentAgentEmail, currentAgentName, currentAgentGroupId, currentAgentGroupName);
+    button.onclick = () => fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneegroupname, assigneeId, currentAgentId, currentAgentEmail, currentAgentName);
 
 }
 
@@ -110,7 +110,7 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
  * @returns {Promise<any>} A promise that resolves with the response data.
  */
 
-async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId, currentAgentId, currentAgentEmail, currentAgentName, currentAgentGroupId, currentAgentGroupName){
+async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneegroupname, assigneeId, currentAgentId, currentAgentEmail, currentAgentName){
     const loadstart = performance.now();
     const eventmodule = "fetch-internal-notes-main";
     const aiinternalnotebutton = document.getElementById("cta-generate-internal-note");
@@ -123,12 +123,10 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
                 action: 'generate-internal-note-clicked',
                 currentAgentId: String(currentAgentId || 'unknown'),
                 currentAgentEmail: String(currentAgentEmail || 'unknown'),
-                currentAgentGroupId: String(currentAgentGroupId || 'unknown'),
-                currentAgentGroupName: String(currentAgentGroupName || 'unknown'),
                 ticketId: String(ticketID),
                 assigneeId: String(assigneeId || 'unknown'),
                 assigneeGroupId: String(assigneegroupid || 'unknown'),
-                team: String(getTeamFromGroupId(assigneegroupid) || 'unknown'),
+                assigneeGroupName: String(assigneegroupname || 'unknown'),
                 isAssignedToClickingAgent: Boolean(currentAgentId === assigneeId)
             };
 
@@ -236,7 +234,7 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
 
         const actionData = {
             action: 'PASTE_INTERNAL_NOTE',
-            data: { ticketID, wrapupData, agentId, useremail, userfullname, assigneegroupid, assigneeId, currentAgentId, currentAgentEmail, currentAgentName, currentAgentGroupId, currentAgentGroupName }
+            data: { ticketID, wrapupData, agentId, useremail, userfullname, assigneegroupid, assigneegroupname, assigneeId, currentAgentId, currentAgentEmail, currentAgentName }
         };
 
         sessionStorage.setItem(PENDING_ACTION_KEY, JSON.stringify(actionData));
@@ -281,7 +279,7 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
             const loadstart = performance.now();
             const eventmodule = "wrap-up-notes-initialization";
 
-            renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, null, contactid, internalNoteText, assigneegroupid, currentAgentId, currentAgentEmail, currentAgentGroupId, currentAgentGroupName);
+            renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, null, contactid, internalNoteText, assigneegroupid, assigneegroupname, currentAgentId, currentAgentEmail);
 
             const loadend = performance.now();
             const loadtime = loadend - loadstart; 
@@ -385,7 +383,7 @@ async function setCurrentTimeToField(client) {
     });
 }
 
-async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, flag, contactid, internalNoteText, assigneegroupid, currentAgentId, currentAgentEmail, currentAgentGroupId, currentAgentGroupName) {
+async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, flag, contactid, internalNoteText, assigneegroupid, assigneegroupname, currentAgentId, currentAgentEmail) {
   const loadstart = performance.now();
   const ticket_id = ticketID;
   const agent_id = agentId;
@@ -454,10 +452,9 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
                   action: 'internal-note-submitted',
                   currentAgentId: String(currentAgentId || 'unknown'),
                   currentAgentEmail: String(currentAgentEmail || 'unknown'),
-                  currentAgentGroupId: String(currentAgentGroupId || 'unknown'),
-                  currentAgentGroupName: String(currentAgentGroupName || 'unknown'),
                   ticketId: String(ticket_id),
-                  team: String(getTeamFromGroupId(assigneegroupid) || 'unknown'),
+                  assigneeGroupId: String(assigneegroupid || 'unknown'),
+                  assigneeGroupName: String(assigneegroupname || 'unknown'),
                   noteLength: Number(fullnotecontent.length),
                   hasContactId: Boolean(contactid)
               };
