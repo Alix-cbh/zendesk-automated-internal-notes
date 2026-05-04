@@ -27,15 +27,19 @@ document.addEventListener("DOMContentLoaded", async () => {
                   
                   const ticketID = pendingAction.data.ticketID; 
                   const agentId = pendingAction.data.agentId; 
-                  const useremail = pendingAction.data.useremail; 
+                  const useremail = pendingAction.data.useremail;
                   const userfullname = pendingAction.data.userfullname;
                   const assigneegroupid = pendingAction.data.assigneegroupid;
+                  const assigneegroupname = pendingAction.data.assigneegroupname;
                   const assigneeId = pendingAction.data.assigneeId;
                   const wrapupData = pendingAction.data.wrapupData;
+                  const currentAgentId = pendingAction.data.currentAgentId;
+                  const currentAgentEmail = pendingAction.data.currentAgentEmail;
+                  const currentAgentName = pendingAction.data.currentAgentName;
 
                   await client.set('comment.type', 'internalNote');
 
-                  await generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId);
+                  await generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneegroupname, assigneeId, currentAgentId, currentAgentEmail, currentAgentName);
                   await renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname);
               }
           } else {
@@ -65,7 +69,11 @@ async function initApp(client) {
     console.log("Assigne fetched", assingee);
 
     const assigneegroupid = assingee["ticket.assignee"].group?.id;
+    const assigneegroupname = assingee["ticket.assignee"].group?.name;
     const assigneeId = assingee["ticket.assignee"].user?.id;
+
+    console.log("Ticket Assignee Group ID:", assigneegroupid);
+    console.log("Ticket Assignee Group Name:", assigneegroupname);
     
     const requesterData = await client.get("ticket.requester");
     console.log("Requester fetched", requesterData);
@@ -74,6 +82,26 @@ async function initApp(client) {
     const agentId = user?.externalId;
     const useremail = user?.email;
     const userfullname = user?.name;
+
+    // Get current logged-in agent (who is using the app)
+    const currentAgentData = await client.get("currentUser");
+    console.log("Current Agent Data fetched:", currentAgentData);
+    const currentAgent = currentAgentData["currentUser"];
+    const currentAgentId = currentAgent?.id;
+    const currentAgentEmail = currentAgent?.email;
+    const currentAgentName = currentAgent?.name;
+
+    // Get current agent's group
+    const currentAgentGroupData = await client.get("currentUser.groups");
+    const currentAgentGroup = currentAgentGroupData["currentUser.groups"]?.[0];
+    const currentAgentGroupId = currentAgentGroup?.id;
+    const currentAgentGroupName = currentAgentGroup?.name;
+
+    console.log("Current Agent ID:", currentAgentId);
+    console.log("Current Agent Email:", currentAgentEmail);
+    console.log("Current Agent Name:", currentAgentName);
+    console.log("Current Agent Group ID:", currentAgentGroupId);
+    console.log("Current Agent Group Name:", currentAgentGroupName);
 
     localStorage.setItem("ticketId", ticketID);
     localStorage.setItem("agentID", agentId);
@@ -89,7 +117,7 @@ async function initApp(client) {
     console.log("Group ID Logged for session:", assigneegroupid);
     console.log("Assignee ID Logged for session:", assigneeId);
 
-    generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneeId);
+    generateinternalnotescontainer(ticketID, client, agentId, useremail, userfullname, assigneegroupid, assigneegroupname, assigneeId, currentAgentId, currentAgentEmail, currentAgentName);
 
     const appLoadEnd = performance.now();
     const loadTime = appLoadEnd - appLoadStart;
