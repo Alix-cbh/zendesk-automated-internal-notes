@@ -5,6 +5,41 @@ import { apiKey, apiUrl } from "./config.js";
 const PENDING_ACTION_KEY = 'zendeskApp_pendingAction';
 
 /**
+ * Isolates text between "Request:" and "Outcome:" 
+ * and strips HTML tags for a clean plain-text output.
+ */
+function extractRequestDetails(text) {
+  if (!text) return "";
+
+  // 1. Isolate the Request block
+  const regex = /Request:(.*?)(?=Outcome:|$)/s;
+  const match = text.match(regex);
+  
+  if (match && match[1]) {
+    let extracted = match[1];
+
+    // 2. Remove HTML tags (e.g., </strong>, <br>, <div>)
+    // This regex looks for anything between < and >
+    extracted = extracted.replace(/<[^>]*>/g, '');
+
+    // 3. Clean up common markdown/formatting artifacts if necessary
+    // (Optional: removes redundant asterisks if markdown bold is used)
+    extracted = extracted.replace(/\*\*/g, '');
+
+    // 4. Decode HTML entities (if any, like &amp; or &nbsp;)
+    const decoded = extracted
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>');
+
+    return decoded.trim();
+  }
+  
+  return "";
+}
+
+/**
  * Maps assignee group IDs to team names
  * @param {number} groupId - The assignee group ID
  * @returns {string|null} Team name or null if not mapped
@@ -416,6 +451,28 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
 
       await client.set('comment.text', fullnotecontent);
       // Ticket editor insert end
+
+      // --- NEW LOGIC START: Extract Request and Update Custom Field ---
+      const requestText = extractRequestDetails(internalnotesfill);
+      if (requestText) {
+        const REQUEST_FIELD_ID = 40159708815895;
+        try {
+          await client.request({
+            url: `/api/v2/tickets/${ticket_id || ticketID}.json`,
+            type: 'PUT',
+            contentType: 'application/json',
+            data: JSON.stringify({
+              ticket: {
+                custom_fields: [{ id: REQUEST_FIELD_ID, value: requestText }]
+              }
+            })
+          });
+          console.log("✅ Request field updated successfully");
+        } catch (fieldErr) {
+          console.error("❌ Failed to update Request field:", fieldErr);
+        }
+      }
+      // --- NEW LOGIC END ---
       
       await setCurrentTimeToField(client);
 
