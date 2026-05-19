@@ -1,4 +1,3 @@
-
 import { fetchWithTimeoutAndRetry } from "./utils.js";
 import { apiKey, apiUrl } from "./config.js";
 
@@ -19,14 +18,12 @@ function extractRequestDetails(text) {
     let extracted = match[1];
 
     // 2. Remove HTML tags (e.g., </strong>, <br>, <div>)
-    // This regex looks for anything between < and >
     extracted = extracted.replace(/<[^>]*>/g, '');
 
-    // 3. Clean up common markdown/formatting artifacts if necessary
-    // (Optional: removes redundant asterisks if markdown bold is used)
+    // 3. Clean up markdown bold artifacts
     extracted = extracted.replace(/\*\*/g, '');
 
-    // 4. Decode HTML entities (if any, like &amp; or &nbsp;)
+    // 4. Decode HTML entities
     const decoded = extracted
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
@@ -78,22 +75,6 @@ async function generateinternalnotescontainer(ticketID, client, agentId, userema
     <div>
         
     `;
-
-    /*if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
-        console.log("Voice Channel Ticket. Deactivating Button");
-        const internalNoteButton = document.getElementById("cta-generate-internal-note");
-        const infospan = document.getElementById("info-span");
-        const infospandisabled = document.getElementById("info-span-disbale");
-
-        if (internalNoteButton) {
-            internalNoteButton.disabled = true;
-            internalNoteButton.title = "This feature is not available for the current assignee group.";
-            infospan.style.display = "none";
-            infospandisabled.style.display = "block";
-        }
-    } else {
-      console.log("Non-Voice Ticket, procedding.")
-    }*/
 
     if (assigneegroupid === 28949203098007 || assigneegroupid === 29725263631127) {
         console.log("Voice Channel Ticket detected");
@@ -283,33 +264,6 @@ async function fetchinternalwrapupnotes(ticketID, client, agentId, useremail, us
         const internalNoteText = commentObject['comment.text'];
         console.log("Content of internal note:", internalNoteText);
 
-        /*await client.get(['comment.text', 'comment.public']).then(function(data) {
-          if (!data['comment.public']) {
-            const internalNoteText = data['comment.text'];
-            console.log('Internal Note Text:', internalNoteText);
-          }
-        });*/
-
-        //Poll to confirm the change has been applied before proceeding.
-        /*let switched = false;
-
-        for (let i = 0; i < 40; i++) { // Poll for up to 2 seconds (20 * 100ms)
-            const currenttpyeinit = await client.get('comment.type');
-            const currentType = currenttpyeinit['comment.type'];
-            console.log("Current comment type:", currentType);
-            if (currentType === 'internalNote') {
-                console.log('Comment type successfully switched to internalNote.');
-                switched = true;
-                break;
-            }
-            // Wait 100ms before the next check.
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-
-        if (!switched) {
-            console.warn('Comment type did not switch in time, but proceeding with rendering anyway.');
-        }*/
-        
           try {
             const loadstart = performance.now();
             const eventmodule = "wrap-up-notes-initialization";
@@ -463,8 +417,6 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
 
         console.log("🔄 Rendering Internal Notes");
 
-        
-
       const fullnotecontent = `
           <strong>Date:</strong> ${currentDate}<br>
           <strong>ZD Ticket:</strong> ${ticket_id || ticketID}<br>   
@@ -476,29 +428,64 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
       `;
 
       await client.set('comment.text', fullnotecontent);
-      // Ticket editor insert end
 
-      // --- NEW LOGIC START: Extract Request and Update Custom Field ---
+      // ── Custom field updates ─────────────────────────────────────────────
+
+      // Field IDs
+      const REQUEST_FIELD_ID     = 40159708815895;
+      const WORKPLACE_NAME_FIELD = 40043812430871;
+      const SHIFT_DATE_FIELD     = 40043862821399;
+
+      // Request text — extracted from note content as before
       const requestText = extractRequestDetails(internalnotesfill);
+
+      // Workplace name and shift date/type — read directly from API response payload.
+      // Lambda returns: facility_name (string), shift_date ("MM/DD"), shift_type ("AM"/"PM"/"NOC").
+      // Shift date field format: "MM/DD TYPE" e.g. "05/20 NOC" — matches existing convention.
+      const workplaceName = wrapupData.facility_name || '';
+      const shiftDateRaw  = wrapupData.shift_date    || '';  // "MM/DD"
+      const shiftType     = (wrapupData.shift_type || '').toUpperCase();  // "AM" | "PM" | "NOC"
+      const shiftDate     = shiftDateRaw && shiftType
+        ? `${shiftDateRaw} ${shiftType}`   // e.g. "05/20 NOC"
+        : shiftDateRaw || '';              // fallback to date alone if type missing
+
+      console.log("📋 Extracted Request:",    requestText   || "(none)");
+      console.log("🏥 API Workplace Name:",   workplaceName || "(none)");
+      console.log("📅 API Shift Date+Type:",  shiftDate     || "(none)");
+
+      // Build the custom_fields array — only include fields that have a value
+      const customFieldUpdates = [];
+
       if (requestText) {
-        const REQUEST_FIELD_ID = 40159708815895;
+        customFieldUpdates.push({ id: REQUEST_FIELD_ID, value: requestText });
+      }
+      if (workplaceName) {
+        customFieldUpdates.push({ id: WORKPLACE_NAME_FIELD, value: workplaceName });
+      }
+      if (shiftDate) {
+        customFieldUpdates.push({ id: SHIFT_DATE_FIELD, value: shiftDate });
+      }
+
+      // Single API call for all custom field updates
+      if (customFieldUpdates.length > 0) {
         try {
           await client.request({
             url: `/api/v2/tickets/${ticket_id || ticketID}.json`,
             type: 'PUT',
             contentType: 'application/json',
             data: JSON.stringify({
-              ticket: {
-                custom_fields: [{ id: REQUEST_FIELD_ID, value: requestText }]
-              }
+              ticket: { custom_fields: customFieldUpdates }
             })
           });
-          console.log("✅ Request field updated successfully");
+          console.log("✅ Custom fields updated successfully:", customFieldUpdates);
         } catch (fieldErr) {
-          console.error("❌ Failed to update Request field:", fieldErr);
+          console.error("❌ Failed to update custom fields:", fieldErr);
         }
+      } else {
+        console.warn("⚠️ No custom field values extracted — skipping field update.");
       }
-      // --- NEW LOGIC END ---
+
+      // ── End custom field updates ─────────────────────────────────────────
       
       await setCurrentTimeToField(client);
 
@@ -561,4 +548,4 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
 }
 
 
-export {generateinternalnotescontainer, renderwrapupnotes}; 
+export {generateinternalnotescontainer, renderwrapupnotes};
