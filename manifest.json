@@ -31,7 +31,7 @@
     "name": "accepted_groups",
     "type": "multiline",
     "required": true,
-    "default": "360003969074, 20551054863127, 5478204477591, 17837476387479",
+    "default": "17837476387479, 28949203098007, 11409744858391",
     "label": "Accepted Group IDs",
     "description": "Enter the group IDs separated by commas."
   },
