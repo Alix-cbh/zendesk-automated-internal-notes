@@ -372,6 +372,48 @@ async function setCurrentTimeToField(client) {
     });
 }
 
+/**
+ * Reads Oracle full data from localStorage and extracts the formatted shift date.
+ * Falls back to null if data is unavailable or unparseable.
+ * @param {string|number} ticketID
+ * @returns {string|null} Formatted shift date e.g. "05/20 NOC" or null
+ */
+function getShiftDateFromOracleCache(ticketID) {
+  try {
+    const cached = localStorage.getItem(`ai_copilot_${ticketID}`);
+    if (!cached) return null;
+
+    const data = JSON.parse(cached);
+    const shiftStartTime = data?.shift_data?.shift_start_time;
+    if (!shiftStartTime) return null;
+
+    // Re-use Oracle's existing format helper logic inline
+    const commaMatch = shiftStartTime.match(
+      /^(\d{4})-(\d{2})-(\d{2})\s*,\s*\d{1,2}:\d{2}\s*(AM|PM)$/i
+    );
+    if (commaMatch) {
+      const [, , month, day, modifier] = commaMatch;
+      return `${month}/${day} ${modifier.toUpperCase()}`;
+    }
+
+    const isoMatch = shiftStartTime.match(
+      /^(\d{4})-(\d{2})-(\d{2})[T ](\d{1,2}):/
+    );
+    if (isoMatch) {
+      const [, , month, day, hourStr] = isoMatch;
+      const hour = parseInt(hourStr, 10);
+      if (isNaN(hour) || hour < 0 || hour > 23) return null;
+      const meridiem = hour < 12 ? 'AM' : 'PM';
+      return `${month}/${day} ${meridiem}`;
+    }
+
+    return null;
+  } catch (err) {
+    console.warn('getShiftDateFromOracleCache: failed to read cache', err);
+    return null;
+  }
+}
+
 async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremail, userfullname, flag, contactid, internalNoteText, assigneegroupid, assigneegroupname, currentAgentId, currentAgentEmail) {
   const loadstart = performance.now();
   const ticket_id = ticketID;
@@ -443,15 +485,20 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
       // Lambda returns: facility_name (string), shift_date ("MM/DD"), shift_type ("AM"/"PM"/"NOC").
       // Shift date field format: "MM/DD TYPE" e.g. "05/20 NOC" — matches existing convention.
       const workplaceName = wrapupData.facility_name || '';
-      const shiftDateRaw  = wrapupData.shift_date    || '';  // "MM/DD"
-      const shiftType     = (wrapupData.shift_type || '').toUpperCase();  // "AM" | "PM" | "NOC"
-      const shiftDate     = shiftDateRaw && shiftType
-        ? `${shiftDateRaw} ${shiftType}`   // e.g. "05/20 NOC"
-        : shiftDateRaw || '';              // fallback to date alone if type missing
+      // Prefer Oracle localStorage cache for shift date — falls back to wrapupData fields
+      const cachedShiftDate = getShiftDateFromOracleCache(ticket_id || ticketID);
+      const shiftDateRaw    = wrapupData.shift_date  || '';
+      const shiftType       = (wrapupData.shift_type || '').toUpperCase();
+      const wrapupShiftDate = shiftDateRaw && shiftType
+        ? `${shiftDateRaw} ${shiftType}`
+        : shiftDateRaw || '';
+      const shiftDate = cachedShiftDate || wrapupShiftDate || '';
 
-      console.log("📋 Extracted Request:",    requestText   || "(none)");
-      console.log("🏥 API Workplace Name:",   workplaceName || "(none)");
-      console.log("📅 API Shift Date+Type:",  shiftDate     || "(none)");
+      console.log("📋 Extracted Request:",          requestText    || "(none)");
+      console.log("🏥 API Workplace Name:",         workplaceName  || "(none)");
+      console.log("📅 Oracle Cache Shift Date:",    cachedShiftDate || "(not found)");
+      console.log("📅 Wrapup API Shift Date:",      wrapupShiftDate || "(none)");
+      console.log("📅 Final Shift Date Used:",      shiftDate      || "(none)");
 
       // Build the custom_fields array — only include fields that have a value
       const customFieldUpdates = [];

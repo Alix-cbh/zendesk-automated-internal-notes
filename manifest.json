@@ -28,6 +28,14 @@
     "label": "Restricted words (comma-separated)"
   },
   {
+    "name": "accepted_groups",
+    "type": "multiline",
+    "required": true,
+    "default": "360003969074, 20551054863127, 5478204477591, 17837476387479",
+    "label": "Accepted Group IDs",
+    "description": "Enter the group IDs separated by commas."
+  },
+  {
     "name": "unprofessionalWords",
     "type": "text",
     "required": false,
