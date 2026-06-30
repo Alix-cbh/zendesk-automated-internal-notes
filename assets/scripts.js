@@ -96,11 +96,6 @@ async function initApp(client, acceptedGroups) {
     const isacceptedgroup = acceptedGroups.includes(assigneegroupid);
     console.log("Group access granted:", isacceptedgroup);
 
-    if (!isacceptedgroup) {
-      console.warn("⛔ App initialization stopped — assignee group not in accepted groups list.");
-      return;
-    }
-
     const requesterData = await client.get("ticket.requester");
     console.log("Requester fetched", requesterData);
 
