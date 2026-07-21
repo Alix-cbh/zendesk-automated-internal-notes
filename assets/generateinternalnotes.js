@@ -43,8 +43,41 @@ function extractRequestDetails(text) {
  */
 function getTeamFromGroupId(groupId) {
   const teamMapping = {
-    17837467796759: 'docs', // Tier 1 - Documents Chat
-    29725263631127: 'docs'  // Tier 1 - Documents Voice
+      // Documents Teams
+      17837467796759: 'docs',                  // Tier 1 - Documents Chat
+      29725263631127: 'docs',                  // Tier 1 - Documents Voice
+      360003969074: 'docs_escalations',        // Documents Escalations
+      20551054863127: 'docs_sme_tier2',        // Documents SME Tier 2
+      5478204477591: 'docs_submissions',       // Documents Submissions Team
+
+      // Payments & Trust & Safety
+      25283847854615: 'fraud_payments_sv',     // Fraud - Payments and SV
+      23396899013015: 'payments_dsat_review',  // Payments DSAT Review
+      19885671675543: 'payments_quality',      // Payments Quality
+      5693990715159: 'trust_and_safety',       // Trust and Safety
+      36723969809303: 'stripe_sme',            // Stripe SME
+
+      // Onboarding & Cohort
+      31970000316183: 'white_glove_onboarding',// White Glove Onboarding
+      27826875425559: 'zendesk_app_test_cohort',// Zendesk App Test Cohort
+
+      // WOPs (Workplace Ops) Teams
+      22520477933335: 'wops_ai',               // WOPs - AI
+      1500006549841: 'wops_bug_review',        // WOPs - Bug Review
+      17837476387479: 'wops_chats',            // WOPs - Chats
+      8246548761623: 'wops_escalations',       // WOPs - Escalations
+      23487073749015: 'wops_high_priority',    // WOPs - High Priority [New]
+      23337268764567: 'wops_leadership',       // WOPs - Leadership
+      26163539451671: 'wops_phone_callback',   // WOPs - Phone Callback
+      22384034608407: 'wops_qia',              // WOPs - QIA
+      18739690950551: 'wops_quality',          // WOPs - Quality
+      23501747794071: 'wops_regular_priority', // WOPs - Regular Priority Queue [New]
+      24286963634071: 'wops_sme_consult',      // WOPs - SME Consult
+      27540296849175: 'wops_training',         // WOPs - Training
+      11409744858391: 'wops_urgent_shifts',    // WOPs - Urgent Shifts
+      28949203098007: 'wops_voice_agents',     // WOPs - Voice Channel Agents
+      5495272772503: 'wops_web',               // WOPs - Web
+      26674826273687: 'wops_tech_support'      // Workplace Ops Tech Support
   };
 
   return teamMapping[groupId] || null;
@@ -409,6 +442,24 @@ async function setCurrentTimeToField(client) {
 }
 
 /**
+ * Reads and parses the Oracle Co-pilot cache blob from localStorage for a ticket.
+ * Centralized so all cache-derived lookups (shift date, shift ids, facility info)
+ * share the same parse/error-handling path.
+ * @param {string|number} ticketID
+ * @returns {object|null} Parsed cache object, or null if unavailable/unparseable.
+ */
+function getOracleCacheData(ticketID) {
+  try {
+    const cached = localStorage.getItem(`ai_copilot_${ticketID}`);
+    if (!cached) return null;
+    return JSON.parse(cached);
+  } catch (err) {
+    console.warn('getOracleCacheData: failed to read/parse cache', err);
+    return null;
+  }
+}
+
+/**
  * Reads Oracle full data from localStorage and extracts the formatted shift date.
  * Falls back to null if data is unavailable or unparseable.
  * @param {string|number} ticketID
@@ -416,10 +467,9 @@ async function setCurrentTimeToField(client) {
  */
 function getShiftDateFromOracleCache(ticketID) {
   try {
-    const cached = localStorage.getItem(`ai_copilot_${ticketID}`);
-    if (!cached) return null;
+    const data = getOracleCacheData(ticketID);
+    if (!data) return null;
 
-    const data = JSON.parse(cached);
     const shiftStartTime = data?.shift_data?.shift_start_time;
     if (!shiftStartTime) return null;
 
@@ -447,6 +497,44 @@ function getShiftDateFromOracleCache(ticketID) {
   } catch (err) {
     console.warn('getShiftDateFromOracleCache: failed to read cache', err);
     return null;
+  }
+}
+
+/**
+ * Reads the shift_ids_in_field array from the Oracle cache to determine
+ * whether any shift IDs were actually returned/attached for this ticket.
+ * @param {string|number} ticketID
+ * @returns {Array} Array of shift ids, or empty array if none/unavailable.
+ */
+function getShiftIdsFromOracleCache(ticketID) {
+  try {
+    const data = getOracleCacheData(ticketID);
+    if (!data) return [];
+
+    const shiftIds = data?.shift_ids_in_field;
+    return Array.isArray(shiftIds) ? shiftIds : [];
+  } catch (err) {
+    console.warn('getShiftIdsFromOracleCache: failed to read cache', err);
+    return [];
+  }
+}
+
+/**
+ * Reads the ca_msa_facility flag from the Oracle cache's facility_information block
+ * to determine whether the facility is a CA facility.
+ * @param {string|number} ticketID
+ * @returns {boolean} True if ca_msa_facility === "Yes", false otherwise.
+ */
+function isCaMsaFacilityFromOracleCache(ticketID) {
+  try {
+    const data = getOracleCacheData(ticketID);
+    if (!data) return false;
+
+    const caMsaFacility = data?.facility_information?.ca_msa_facility;
+    return caMsaFacility === "Yes";
+  } catch (err) {
+    console.warn('isCaMsaFacilityFromOracleCache: failed to read cache', err);
+    return false;
   }
 }
 
@@ -511,9 +599,16 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
       // ── Custom field updates ─────────────────────────────────────────────
 
       // Field IDs
-      const REQUEST_FIELD_ID     = 40159708815895;
-      const WORKPLACE_NAME_FIELD = 40043812430871;
-      const SHIFT_DATE_FIELD     = 40043862821399;
+      const REQUEST_FIELD_ID        = 40159708815895;
+      const WORKPLACE_NAME_FIELD    = 40043812430871;
+      const SHIFT_DATE_FIELD        = 40043862821399;
+      const SHIFT_TYPE_DEFAULT_FIELD = 33639935129751; // dropdown — defaulted when no shift id is found
+      const CA_FACILITY_SHIFT_FIELD  = 36343028656663; // checkbox — checked/unchecked based on ca_msa_facility flag (no default value)
+
+      // Default dropdown value/tag used when no shift id is found for the ticket.
+      // NOTE: confirm this matches the exact option tag/value configured on the
+      // 33639935129751 dropdown field in Zendesk.
+      const DEFAULT_SHIFT_TYPE_VALUE = 'Flex::Long-Term Care';
 
       // Request text — extracted from note content as before
       const requestText = extractRequestDetails(internalnotesfill);
@@ -549,6 +644,27 @@ async function renderwrapupnotes(ticketID, client, wrapupData, agentId, useremai
       if (shiftDate) {
         customFieldUpdates.push({ id: SHIFT_DATE_FIELD, value: shiftDate });
       }
+
+      // ── Shift ID default / CA facility logic ───────────────────────────
+      // "Shift id empty" is determined from the Oracle cache's shift_ids_in_field
+      // array rather than the ticket custom field alone — if that array is empty
+      // (or missing), no shift ids were actually returned/attached for the ticket.
+      const shiftIdsInField = getShiftIdsFromOracleCache(ticket_id || ticketID);
+      const hasShiftIds = shiftIdsInField.length > 0;
+
+      console.log("🆔 Shift IDs found in cache:", shiftIdsInField.length ? shiftIdsInField : "(none)");
+
+      if (!hasShiftIds) {
+        console.log(`⚠️ No shift ids found — defaulting field ${SHIFT_TYPE_DEFAULT_FIELD} to "${DEFAULT_SHIFT_TYPE_VALUE}"`);
+        customFieldUpdates.push({ id: SHIFT_TYPE_DEFAULT_FIELD, value: DEFAULT_SHIFT_TYPE_VALUE });
+
+        const isCaMsaFacility = isCaMsaFacilityFromOracleCache(ticket_id || ticketID);
+        console.log("🏥 CA MSA facility flag from cache:", isCaMsaFacility);
+
+        // Checkbox field — just reflects whether this is a CA facility, no default value involved.
+        customFieldUpdates.push({ id: CA_FACILITY_SHIFT_FIELD, value: isCaMsaFacility });
+      }
+      // ── End shift id default / CA facility logic ────────────────────────
 
       // Single API call for all custom field updates
       if (customFieldUpdates.length > 0) {
