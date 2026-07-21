@@ -77,7 +77,8 @@ function getTeamFromGroupId(groupId) {
       11409744858391: 'wops_urgent_shifts',    // WOPs - Urgent Shifts
       28949203098007: 'wops_voice_agents',     // WOPs - Voice Channel Agents
       5495272772503: 'wops_web',               // WOPs - Web
-      26674826273687: 'wops_tech_support'      // Workplace Ops Tech Support
+      26674826273687: 'wops_tech_support',     // Workplace Ops Tech Support
+      6086670320791: 'wpl_suport'              // Workplace Support  
   };
 
   return teamMapping[groupId] || null;
